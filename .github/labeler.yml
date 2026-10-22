@@ -1,0 +1,62 @@
+# Path-based pull request labels. Keep label names in sync with repository labels.
+# A pull request may receive more than one label.
+docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - Dockerfile
+          - compose*.yml
+          - compose*.yaml
+
+arm64:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/platform/**
+          - research/arm64/**
+
+qemu:
+  - changed-files:
+      - any-glob-to-any-file:
+          - patches/qemu/**
+          - scripts/apply-qemu-patches.sh
+          - scripts/build-arm-qemu.sh
+          - scripts/fetch-qemu-source.sh
+          - tests/qemu-*.sh
+          - tests/qemu-dcz/**
+
+guest:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/guest/**
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tests/**
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - readme.md
+          - AGENTS.md
+          - CONTEXT.md
+          - LESSONS.md
+          - CONTRIBUTING.md
+          - SECURITY.md
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - requirements.txt
+          - .github/dependabot.yml
+          - renovate.json
+
+web:
+  - changed-files:
+      - any-glob-to-any-file:
+          - web/**
