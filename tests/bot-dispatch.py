@@ -71,6 +71,7 @@ class DispatchTests(unittest.TestCase):
 
     def test_authorized_documentation_and_test_requests(self):
         for category, paths in [('Documentation', 'readme.md'),
+                                ('Documentation', 'README.md'),
                                 ('Tests', 'tests/platform.sh\ntests/healthcheck.sh')]:
             with self.subTest(category=category):
                 self.input['issue']['body'] = self.body.replace('Documentation', category).replace('readme.md', paths)

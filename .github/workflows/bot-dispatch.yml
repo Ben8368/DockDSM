@@ -54,7 +54,7 @@ jobs:
             }
             const category = field('Task category');
             const paths = field('Allowed paths').split(/\r?\n/).map(path => path.trim()).filter(Boolean);
-            const safePath = path => /^(?:readme\.md|docs\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.md|tests\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:py|sh))$/.test(path) &&
+            const safePath = path => /^(?:README\.md|readme\.md|docs\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.md|tests\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:py|sh))$/.test(path) &&
               !/^(?:docs\/(?:ADR|archive|lessons)\/|docs\/(?:ci|platforms|arm64[^/]*|arc[^/]*|runtime[^/]*)\.md$|tests\/(?:qemu|surveillance))/.test(path);
             if (!['Documentation', 'Tests'].includes(category) || paths.length < 1 || paths.length > 3 ||
                 !paths.every(safePath) ||
