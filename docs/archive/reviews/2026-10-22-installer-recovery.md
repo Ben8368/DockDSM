@@ -2,7 +2,11 @@
 
 ## 范围与职责
 
-维护者要求将简单修复交给机器人，其余由 Codex 完成。健康检查由 Jules 独立承接 [Issue #7](https://github.com/Ben8368/DockDSM/issues/7)，并交付 [PR #8](https://github.com/Ben8368/DockDSM/pull/8) 待审查。该项未修复的影响登记于 [TD-004](../../TECH_DEBT.md#td-004启动未就绪时健康检查误报成功)。Codex 负责 x86 安装器；维护者随后授权提交 PR，本分支基于远端 `922cf94`，不合并或发布。
+维护者要求将简单修复交给机器人，其余由 Codex 完成。健康检查由 Jules 独立承接 [Issue #7](https://github.com/Ben8368/DockDSM/issues/7)，并交付 [PR #8](https://github.com/Ben8368/DockDSM/pull/8) 待审查。该项未修复的影响当时登记为 TD-004，后续关闭情况见[后续状态](#后续状态)。Codex 负责 x86 安装器；维护者随后授权提交 PR，本分支基于远端 `922cf94`，不合并或发布。
+
+## 后续状态
+
+PR #8 于 2026-10-22 合并，Issue #7 自动关闭；启动健康检查合成回归及基于最新 master 的 `CI result` 通过。TD-004 已解决并从活动技术债移除。未运行真实 DSM 冷启动或硬件/KVM 验收。
 
 ## 触发条件与修复
 
