@@ -1,0 +1,72 @@
+language: en-US
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  allow_author_approval: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches:
+      - master
+
+  path_filters:
+    - '!research/arm64/work/**'
+    - '!**/*.pat'
+    - '!**/*.img'
+    - '!**/*.bin'
+    - '!**/*.qcow2'
+
+  path_instructions:
+    - path: 'Dockerfile'
+      instructions: >-
+        Review build safety, base image provenance and pinning, package installation,
+        secret handling, and whether both native amd64 and arm64 paths remain valid.
+        Do not suggest changing the pinned QEMU 8.2.2 source or the production patch series.
+    - path: 'src/**'
+      instructions: >-
+        Focus on shell injection, argument quoting, error handling, cleanup, and
+        protection of virtual disks, volumes, and existing data. Flag changes that
+        weaken DSM_PLATFORM defaults, the rtd1619b experimental boundary, or host
+        architecture detection. Do not propose automatic changes to VM or disk behavior.
+    - path: 'patches/qemu/**'
+      instructions: >-
+        Treat this as the production QEMU 8.2.2 patch series. Check exact upstream
+        identity, patch order, minimal scope, and that research patches do not leak
+        into production. Do not suggest changing the pinned upstream commit.
+    - path: '.github/workflows/**'
+      instructions: >-
+        Check least-privilege permissions, pinned action commits, untrusted pull
+        request handling, release boundaries, and that GHCR publishing remains manual
+        workflow_dispatch only. Do not suggest automatic merge or release triggers.
+    - path: 'scripts/**'
+      instructions: >-
+        Check shell and Python safety, source identity verification, temporary
+        directory handling, and failure classification. Do not weaken patch or
+        source-identity checks.
+    - path: 'tests/**'
+      instructions: >-
+        Check that synthetic tests are not presented as real DSM boot, bare-metal
+        ARM64, or Surveillance Station acceptance. Do not weaken assertions to make
+        a pull request pass.
+    - path: 'web/**'
+      instructions: >-
+        Check input handling, path traversal, command execution, and credential
+        exposure.
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    autofix:
+      enabled: false
+    fix_ci:
+      enabled: false
+    resolve_merge_conflict:
+      enabled: false
+
+chat:
+  auto_reply: true
