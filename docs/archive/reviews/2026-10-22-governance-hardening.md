@@ -33,7 +33,7 @@
 - `docs/QUALITY.md`：明确 `🚦 Audit Report` 是流程性强制，CI 不检查 PR 正文。
 - `docs/ADR/README.md`、`ADR 0003`、`ADR 0004`：引入“部分替代”并明确仍生效范围。
 - `docs/PROVENANCE.md`、`CONTEXT.md`、`docs/implementation-plan.md`：记录重建根提交的证据边界，并修剪 CONTEXT 中已由 PROVENANCE 承载的非阻断说明。
-- `docs/AI_RULES.md`、`CONTRIBUTING.md`、`AGENTS.md`、`docs/ci.md`、PR 模板：定义非阻塞 PR 流程；推送并创建 PR 后不等待远端 CI，合并前确认 `CI result`。
+- `docs/AI_RULES.md`、`CONTRIBUTING.md`、`AGENTS.md`、`docs/ci.md`、PR 模板：定义非阻塞 PR 流程；推送/创建 PR 仍需用户明确授权，推送后不等待远端 CI，合并前确认 `CI result`。
 - 主仓库：建立 `refs/tags/evidence/2bebdb2`，使被取代的根提交可长期引用。
 
 ## PR 审查反馈
