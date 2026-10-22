@@ -43,7 +43,14 @@ chmod +x "$tmp/check.sh"
 run_check() {
   (
     cd "$tmp"
-    ./check.sh >/dev/null 2>&1
+    # Persist observations across the check.sh subprocess; a shell counter in
+    # this parent would not see requests made by the child.
+    curl() {
+      printf '%s\n' "$*" >> "$HEALTHCHECK_REQUEST_LOG"
+      command curl "$@"
+    }
+    export -f curl
+    HEALTHCHECK_REQUEST_LOG="$tmp/http-requests.log" ./check.sh >/dev/null 2>&1
   )
 }
 
@@ -113,10 +120,16 @@ if run_check; then
   exit 1
 fi
 
-# Scenario 4: QEMU process alive and NETWORK=N -> exit 0
+# Scenario 4: QEMU process alive and NETWORK=N -> exit 0 without HTTP
 echo "$DUMMY_PID" > "$tmp/shm/qemu.pid"
+echo "127.0.0.1:$HTTP_PORT" > "$tmp/shm/dsm.url"
+: > "$tmp/http-requests.log"
 if ! NETWORK=N run_check; then
   echo "FAIL: Expected exit 0 when QEMU is alive and NETWORK=N" >&2
+  exit 1
+fi
+if [[ -s "$tmp/http-requests.log" ]]; then
+  echo "FAIL: NETWORK=N must not make an HTTP request" >&2
   exit 1
 fi
 
@@ -142,8 +155,15 @@ if NETWORK=Y DHCP=N run_check; then
 fi
 
 echo "127.0.0.1:$HTTP_PORT" > "$tmp/shm/dsm.url"
+: > "$tmp/http-requests.log"
 if ! NETWORK=Y DHCP=N run_check; then
   echo "FAIL: Expected exit 0 when HTTP request succeeds" >&2
+  exit 1
+fi
+
+# Positive control: the observer must record the enabled-network request.
+if [[ ! -s "$tmp/http-requests.log" ]]; then
+  echo "FAIL: HTTP request observer did not record the enabled-network check" >&2
   exit 1
 fi
 
