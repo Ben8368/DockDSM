@@ -20,11 +20,11 @@
 
 ### TD-002：构建依赖仍包含可变外部输入
 
-- **优先级 / 位置 / 来源 / 目标阶段：** P1；`Dockerfile` 的 qemux/debian 镜像标签、qemu-host 标签、patology main URL；2026-10-22 规划审查；G0 / W01。
-- **当前妥协与原因：** 沿用标签和远端脚本获取便于构建，但同一源码不能独立锁定全部输入；QEMU 源码/补丁已有固定机制，不能据此推断整个镜像可重复。
-- **影响与最坏结果：** 外部内容变化引起构建漂移、兼容差异或供应链问题，也污染性能 A/B。
-- **偿还方案：** 固定镜像 digest、脚本 commit/hash 与工具清单，明确更新流程；系统包若暂未快照，记录版本及剩余可重复性边界。
-- **验证方式：** 原生 amd64/arm64 重建、来源身份校验与现有镜像回归；不以单次构建成功替代输入锁定。
+- **优先级 / 位置 / 来源 / 目标阶段：** P1；`Dockerfile`、`requirements.txt`、Debian package repositories；2026-10-22 W01；G0。
+- **当前妥协与原因：** Docker frontend、qemux/debian images、qemu-host、patology 文件和 Python direct/transitive packages 已固定身份；APT 使用滚动 Trixie 仓库，QEMU configure-time subproject fetch 行为尚未由双架构原生构建确认。
+- **影响与最坏结果：** 未快照的系统包或构建期下载可能让同一源码产生不同镜像或破坏跨架构构建，也可能污染性能 A/B。
+- **偿还方案：** 按[依赖清单](dependency-locks.md)维护镜像 digest、文件 commit/hash、Python hashes；验证并固定 Debian snapshot 与任何 configure-time 下载后关闭此债。
+- **验证方式：** 原生 amd64/arm64 重建、来源身份校验、包闭包与镜像回归；不以单次构建成功替代输入锁定。
 
 ### TD-003：启动编排依赖基础镜像脚本与共享 Shell 状态
 
