@@ -11,7 +11,7 @@
 - 设备为 x86、MacBook Air M5、RK3588；RK 仅 Docker 容器验证，Mac 比较容器后端后选型，详见[测试矩阵](docs/test-matrix.md)。
 - 当前 `virtualdsm` 与 DS124 `rtd1619b` 启动实现和存储兼容边界保持不变；见 [平台契约](docs/platforms.md)。
 - CI 已采用保守范围路由、原生双架构检查和统一 `CI result`；发布仍需手动授权，见 [CI 设计](docs/ci.md)。
-- Renovate / Jules / CodeRabbit 已接入；[依赖看板 #3](https://github.com/Ben8368/DockDSM/issues/3)与 Jules 文档 PR 已生成，普通依赖仍先审批，Dependabot 负责安全修复；协作边界见 [ADR 0007](docs/ADR/0007-bot-collaboration.md)。
+- Renovate / Jules / CodeRabbit 已接入；[依赖看板 #3](https://github.com/Ben8368/DockDSM/issues/3)与 Jules 文档 PR 已生成，普通依赖仍先审批，Dependabot 负责安全修复；低风险 PR 自动修复规则已启用，Issue 自动派单待 workflow 合并；边界见 [ADR 0008](docs/ADR/0008-scoped-bot-autofix.md)。
 - 生产 QEMU 补丁仍只经 [8.2.2 补丁系列](patches/qemu/8.2.2/README.md)进入镜像。
 
 ## 近期优先级
@@ -33,6 +33,8 @@
 - 2026-10-22：同步当时远端根提交（现由 `refs/tags/evidence/2bebdb2` 固定；该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
 - 2026-10-22：机器人授权、Issue 派单、Dashboard、PR 的 CI 与本地配置/署名校验见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)；最终根提交云端结果按当前 SHA 核验。
 - 2026-10-22：核验 master 分支保护，并加固治理检查、ADR 语义与重建提交证据边界，见[治理加固记录](docs/archive/reviews/2026-10-22-governance-hardening.md)。
+
+- 2026-10-22：低风险 PR 规则 Active、现有两条 PR 不匹配；本地派单回归与未验收边界见[自动修复记录](docs/archive/reviews/2026-10-22-bot-autofix.md)。
 
 ## 按需入口
 

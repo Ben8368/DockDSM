@@ -14,7 +14,7 @@
 
 ## 机器人协作
 
-机器人协作遵循 [ADR 0007](ADR/0007-bot-collaboration.md)：Codex 主开发，Jules 处理明确指派的低风险小任务，Renovate 维护依赖，CodeRabbit 审查，Actions / CodeQL 验证，维护者最终合并与发布。一个任务只指定一个开发负责人。
+机器人协作遵循 [ADR 0007](ADR/0007-bot-collaboration.md) 与 [ADR 0008](ADR/0008-scoped-bot-autofix.md)：Codex 负责核心开发与复核，Jules 承接授权小任务，CodeRabbit 审查并按规则修复低风险 PR，Renovate 维护依赖，Actions / CodeQL 验证，维护者最终合并与发布。一个分支同时只有一个写入者；自动化触发与交接见[操作约定](bot-automation.md)。
 
 `jules` 是 Jules Issue 触发标签；`agent:codex` 仅标记归属，由维护者在 Codex 中派单。`risk:high` 和 `needs:hardware-test` 标记需要额外评审或设备证据的任务，不作为自动授权。高风险任务不交给 Jules；CI 修复也不得超出原任务范围。
 
