@@ -23,6 +23,6 @@ python3 scripts/check-tree.py
 bash research/arm64/tests/smoke.sh
 ```
 
-配置测试需要 PyYAML；完整合成、补丁与镜像命令以 [CI 设计](docs/ci.md) 和 [质量门禁](docs/QUALITY.md)为准。修改产品源码需在完整验证前输出 `🚦 Audit Report`；运行时能力另需目标环境证据，不能用合成测试替代。
+配置测试需要 PyYAML；完整合成、补丁与镜像命令以 [CI 设计](docs/ci.md) 和 [质量门禁](docs/QUALITY.md)为准。低风险文档改动至少运行 `python3 scripts/governance-docs-check.py` 并记录命令与结果作为明确验收要求；修改产品源码需在完整验证前输出 `🚦 Audit Report`；运行时能力另需目标环境证据，不能用合成测试替代。
 
 PR 使用仓库模板，写明命令、结果、未覆盖项及必要的风险/技术债/ADR。`CI result` 是统一自动门禁：不允许必需任务失败、取消或意外跳过。只有文档变更能按策略跳过原生镜像检查；发布必须强制完整检查。CodeQL、标签和 stale 不代替人工审查。
