@@ -4,6 +4,21 @@ set -Eeuo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 tmp=$(mktemp -d)
 
+DUMMY_PID=''
+HTTP_PID=''
+cleanup() {
+  local pid
+  for pid in "$DUMMY_PID" "$HTTP_PID"; do
+    if [[ -n "$pid" ]]; then
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    fi
+  done
+  rm -rf -- "$tmp"
+}
+trap cleanup EXIT
+
+
 mkdir -p "$tmp/shm"
 
 cat > "$tmp/utils.sh" <<'MOCK_UTILS'
@@ -46,12 +61,10 @@ for _ in {1..50}; do
   fi
   sleep 0.1
 done
-
-cleanup() {
-  kill "$DUMMY_PID" "$HTTP_PID" 2>/dev/null || true
-  rm -rf -- "$tmp"
-}
-trap cleanup EXIT
+if ! kill -0 "$HTTP_PID" 2>/dev/null || ! curl -m 1 -fsS -o /dev/null "http://127.0.0.1:$HTTP_PORT/"; then
+  echo "FAIL: HTTP fixture did not start" >&2
+  exit 1
+fi
 
 # Scenario 1: qemu.end exists -> non-zero
 touch "$tmp/shm/qemu.end"
@@ -79,6 +92,17 @@ for invalid_pid in "-123" "0" "abc" "123a" " 999999 "; do
   echo "$invalid_pid" > "$tmp/shm/qemu.pid"
   if run_check; then
     echo "FAIL: Expected non-zero exit status for invalid PID '$invalid_pid'" >&2
+    exit 1
+  fi
+done
+
+# Embedded whitespace must not turn an invalid value into a live PID.
+# Disable networking so a missing dsm.url cannot hide a PID-validation bug.
+for invalid_pid in "${DUMMY_PID:0:1} ${DUMMY_PID:1}" " ${DUMMY_PID}" "${DUMMY_PID} " \
+                   "${DUMMY_PID:0:1}"$'\t'"${DUMMY_PID:1}" "${DUMMY_PID:0:1}"$'\n'"${DUMMY_PID:1}"; do
+  printf '%s\n' "$invalid_pid" > "$tmp/shm/qemu.pid"
+  if NETWORK=N run_check; then
+    echo "FAIL: Accepted whitespace in a live PID" >&2
     exit 1
   fi
 done

@@ -15,7 +15,6 @@ if [ ! -s "/run/shm/qemu.pid" ]; then
 fi
 
 pid=$(<"/run/shm/qemu.pid")
-pid=$(echo "$pid" | tr -d '[:space:]')
 
 if [[ ! "$pid" =~ ^[1-9][0-9]*$ ]] || ! kill -0 "$pid" 2>/dev/null; then
   echo "QEMU process is not running..."
