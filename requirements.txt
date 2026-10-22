@@ -1,3 +1,9 @@
-# Shared by the production image and synthetic CI fixtures.
-dissect.cstruct==4.7
-dissect.extfs==3.15
+# Shared by the production image and synthetic CI fixtures. Hashes are PyPI
+# release-file SHA256 values for Python 3.13 on linux/amd64 and linux/arm64.
+dissect.cstruct==4.7 \
+    --hash=sha256:0427621ce67baa3106df2dc63a320d0a7f5c2da88ba3faf2ef5886a1a6b458fd
+dissect.extfs==3.15 \
+    --hash=sha256:9c67e64552eedc58ecbbdda82287a6c8fbf8b29d99a7b55073d838233d6dfcab
+dissect.util==3.24 \
+    --hash=sha256:42da8fa2569f961a313870e3fa74e33cc48116df20fd33e362db9a9de1ea43cb \
+    --hash=sha256:edca81239873a3bd6b5f0a702fc0fde453e9b3c2cce37f2c166cdd5e235ccd20
