@@ -19,6 +19,15 @@ scope, including RK3588 Docker-only and Mac container selection, is in the
 normalized); the inherited qemux `ARCH` continues to describe its Debian image.
 Only `DSM_PLATFORM` selects DSM hardware policy. Unknown selectors fail early.
 
+## VirtualDSM installation recovery
+
+The x86 installer reuses a complete nonempty boot/system image pair for the
+selected PAT base. If either path exists but the pair is incomplete (including
+empty files or broken symlinks), startup fails with exit 65 before deleting the
+selected images or cached PAT. The check also applies after default URL discovery.
+Restore the matching pair from a backup, or use a separate empty storage directory
+for a new installation; startup does not automatically repair a partial pair.
+
 ## Shared lifecycle and platform API
 
 `entry.sh` sources `platform/common.sh` after the startup hook and utilities,

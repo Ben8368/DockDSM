@@ -389,6 +389,24 @@ finishDsmInstall() {
   return 0
 }
 
+checkDsmInstallState() {
+
+  local boot="$STORAGE/$BASE.boot.img"
+  local system="$STORAGE/$BASE.system.img"
+
+  # A partial pair may contain an existing DSM installation. Never treat it as
+  # permission to recreate either image, including empty files or broken links.
+  if [[ -f "$boot" && -s "$boot" && -f "$system" && -s "$system" ]]; then
+    return 0
+  fi
+  if [[ -e "$boot" || -L "$boot" || -e "$system" || -L "$system" ]]; then
+    error "Incomplete Virtual DSM installation for $BASE; existing images are preserved. Restore the matching boot/system pair from backup, or use a separate empty storage directory for a new installation."
+    return 65
+  fi
+
+  return 0
+}
+
 installDSM() {
 
   rm -rf /tmp/dsm || return $?
@@ -462,6 +480,8 @@ installDSM() {
     fi
   fi
 
+  checkDsmInstallState || return $?
+
   # A complete matching image pair is the installation marker; the cached PAT
   # itself is optional after installation.
   if [[ -s "$STORAGE/$BASE.boot.img" && -s "$STORAGE/$BASE.system.img" ]]; then
@@ -479,6 +499,13 @@ installDSM() {
 
   if [ ! -s "$patFile" ]; then
     BASE=$(sanitizePatBase "$URL") || return $?
+  fi
+
+  # Default URL discovery can select a different base than dsm.ver or the
+  # legacy fallback. Protect (and reuse) that pair before any cleanup too.
+  checkDsmInstallState || return $?
+  if [[ -s "$STORAGE/$BASE.boot.img" && -s "$STORAGE/$BASE.system.img" ]]; then
+    return 0
   fi
 
   if [[ "$URL" != "file://$STORAGE/$BASE.pat" ]]; then
