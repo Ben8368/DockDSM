@@ -1,8 +1,8 @@
 # 当前状态
 
 > **最后确认：** 2026-10-22
-> **阶段：** 性能基线先行与渐进运行架构规划已落文档；本轮未实现新功能或进行设备验收。
-> **代码基线：** 新建 DockDSM GitHub 仓库的 `master` 仅有一个初始化根提交；产品代码仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct-boot ARM64。
+> **阶段：** 性能基线与运行架构规划已落文档；x86 安装恢复保护已本地修复并通过合成回归，未进行设备验收。
+> **代码基线：** DockDSM `master` 已包含初始化后的治理与依赖提交；产品代码仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct-boot ARM64。
 
 ## 当前决策
 
@@ -28,6 +28,7 @@
 
 ## 最近验证
 
+- 2026-10-22：x86 不完整安装保盘修复通过本地 L0/L1；健康检查由 Jules 提交 PR #8 待审查，见[修复与派单记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
 - 2026-10-22：README/部署文档与 CI 重写；本地静态、策略和合成回归通过，见 [验证记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。云端结果按当前 `master` SHA 的 [Actions](https://github.com/Ben8368/DockDSM/actions) 核验，不以旧 run 代替。
 - 2026-10-22：同步当时远端根提交（现由 `refs/tags/evidence/2bebdb2` 固定；该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
 - 2026-10-22：机器人授权、Issue 派单、Dashboard、PR 的 CI 与本地配置/署名校验见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)；最终根提交云端结果按当前 SHA 核验。
