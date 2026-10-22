@@ -16,7 +16,7 @@ DockDSM 由 Ben8368 独立维护，拥有自己的产品决策、问题跟踪和
 
 ## 已重建根提交的证据边界
 
-2026-10-22 当天，初始化根提交曾为 [`2bebdb2`](https://github.com/Ben8368/DockDSM/commit/2bebdb27af7b9d0185ce93b96a4b4eb0525b9331)，随后被当前根提交 `2da1c3d` 取代。`2bebdb2` 不在 `master` 可达历史中，只读归档仓库也不包含它，且该归档仓库已设为只读。为保留证据，主仓库已建立带注解 tag `refs/tags/evidence/2bebdb2`；引用该提交时应使用此 tag，不要依赖可达历史或归档仓库。
+2026-10-22 当天，初始化根提交曾为 [`2bebdb2`](https://github.com/Ben8368/DockDSM/commit/2bebdb27af7b9d0185ce93b96a4b4eb0525b9331)，随后被当前根提交 `2da1c3d` 取代。`2bebdb2` 不在 `master` 可达历史中，只读归档仓库也不包含它，且该归档仓库已设为只读。为保留证据，主仓库已建立带注解 tag `refs/tags/evidence/2bebdb2`；需要长期引用时使用此 tag，不要依赖可达历史或归档仓库。
 
 ## 兼容边界
 

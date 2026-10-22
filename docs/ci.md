@@ -36,6 +36,8 @@ CI 验证仓库当前已有实现，不下载 DSM PAT、不启动真实 DSM、�
 
 普通 push/PR 的新提交可取消旧检查；手动和发布运行不由较新提交取消。CI 不自动合并、提交或发布。
 
+PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前用 `gh pr checks <number>` 确认 `CI result` 为 success。
+
 ## 检查覆盖
 
 - **Docs governance**：文档预算/链接、品牌与来源、署名 hook、全树编码/空白、CI 策略回归。

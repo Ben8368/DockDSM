@@ -103,17 +103,23 @@ def check_adrs(root: Path) -> None:
     if index_path.is_file():
         for row in ADR_INDEX_ROW.finditer(read(index_path)):
             number, target, status = row.group(1), row.group(2), row.group(3).strip()
+            if number in index:
+                ERRORS.append(f'docs/ADR/README.md: ADR {number} 索引重复')
             index[number] = (target, status)
             if status not in ADR_STATUSES:
                 ERRORS.append(f'docs/ADR/README.md: ADR {number} 状态“{status}”不合法')
             if not target.startswith(f'{number}-') or not target.endswith('.md'):
                 ERRORS.append(f'docs/ADR/README.md: ADR {number} 链接目标“{target}”与编号不符')
 
+    adr_root = adr_dir.resolve()
     found: set[str] = set()
     for entry in sorted(adr_dir.iterdir()):
         if not entry.is_file() or not re.match(r'^\d{4}-.+\.md$', entry.name):
             continue
         number = entry.name[:4]
+        if number in found:
+            ERRORS.append(f'docs/ADR/{entry.name}: ADR 编号 {number} 重复')
+            continue
         found.add(number)
         content = read(entry)
         status_match = re.search(r'^- 状态：(.+)$', content, re.M)
@@ -127,14 +133,25 @@ def check_adrs(root: Path) -> None:
             ERRORS.append(f'docs/ADR/{entry.name}: 缺少 ISO 日期')
         if number not in index:
             ERRORS.append(f'docs/ADR/{entry.name}: 未出现在 docs/ADR/README.md 索引中')
+        elif index[number][0] != entry.name:
+            ERRORS.append(
+                f'docs/ADR/{entry.name}: 索引链接目标“{index[number][0]}”不是该文件')
         elif index[number][1] != status:
             ERRORS.append(
                 f'docs/ADR/{entry.name}: 文件状态“{status}”与索引状态“{index[number][1]}”不一致')
         if status in {'部分替代', '已替代'}:
             successor = re.search(r'^- (?:替代决定|superseded by)[：:]\s*(.+)$', content, re.M)
-            if not successor or not re.search(r'\[[^\]]+\]\([^)]+\.md\)', successor.group(1)):
+            link = re.search(r'\[[^\]]+\]\(([^)]+\.md)\)', successor.group(1)) if successor else None
+            if not link:
                 ERRORS.append(
                     f'docs/ADR/{entry.name}: 状态为“{status}”但缺少指向替代 ADR 的链接')
+            else:
+                target = (entry.parent / link.group(1)).resolve()
+                if (not target.is_file() or target.parent != adr_root
+                        or not re.match(r'^\d{4}-.+\.md$', target.name)
+                        or target.name[:4] == number):
+                    ERRORS.append(
+                        f'docs/ADR/{entry.name}: 替代链接必须指向存在的、编号不同的 ADR 文件')
             if status == '部分替代' and not re.search(r'^- 替代范围：\S', content, re.M):
                 ERRORS.append(f'docs/ADR/{entry.name}: 部分替代缺少“替代范围”说明')
 

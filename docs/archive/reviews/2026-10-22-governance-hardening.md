@@ -33,7 +33,16 @@
 - `docs/QUALITY.md`：明确 `🚦 Audit Report` 是流程性强制，CI 不检查 PR 正文。
 - `docs/ADR/README.md`、`ADR 0003`、`ADR 0004`：引入“部分替代”并明确仍生效范围。
 - `docs/PROVENANCE.md`、`CONTEXT.md`、`docs/implementation-plan.md`：记录重建根提交的证据边界，并修剪 CONTEXT 中已由 PROVENANCE 承载的非阻断说明。
+- `docs/AI_RULES.md`、`CONTRIBUTING.md`、`AGENTS.md`、`docs/ci.md`、PR 模板：定义非阻塞 PR 流程；推送并创建 PR 后不等待远端 CI，合并前确认 `CI result`。
 - 主仓库：建立 `refs/tags/evidence/2bebdb2`，使被取代的根提交可长期引用。
+
+## PR 审查反馈
+
+CodeRabbit 在 PR #5 指出三点，均已修复并补充回归：
+
+- ADR 索引只按编号前缀匹配，未校验精确文件名；现要求索引目标与文件同名，并拒绝重复编号。
+- 替代 ADR 链接可为自链接或非 ADR 文档；现要求指向同目录、存在且编号不同的 ADR。
+- 实施计划仍使用裸 SHA；现改用 `refs/tags/evidence/2bebdb2`。
 - `.github/workflows/test.yml`、`CONTRIBUTING.md`：接入新增治理回归。
 - `.githooks/commit-msg`：提示前缀改为 `DockDSM:`。
 
@@ -42,7 +51,7 @@
 | 命令 | 结果 |
 | --- | --- |
 | `python3 scripts/governance-docs-check.py` | 通过 |
-| `python3 tests/governance-docs.py` | 7/7 通过 |
+| `python3 tests/governance-docs.py` | 11/11 通过 |
 | `python3 scripts/git-hooks-test.py` | 通过 |
 | `python3 tests/branding.py` | 5/5 通过 |
 | `python3 tests/ci-policy.py` | 16/16 通过 |

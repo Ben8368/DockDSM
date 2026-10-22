@@ -29,7 +29,7 @@
 ## 最近验证
 
 - 2026-10-22：README/部署文档与 CI 重写；本地静态、策略和合成回归通过，见 [验证记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。云端结果按当前 `master` SHA 的 [Actions](https://github.com/Ben8368/DockDSM/actions) 核验，不以旧 run 代替。
-- 2026-10-22：同步远端 `2bebdb2` 并形成规划（该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
+- 2026-10-22：同步当时远端根提交（现由 `refs/tags/evidence/2bebdb2` 固定；该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
 - 2026-10-22：机器人授权、Issue 派单、Dashboard、PR 的 CI 与本地配置/署名校验见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)；最终根提交云端结果按当前 SHA 核验。
 - 2026-10-22：核验 master 分支保护，并加固治理检查、ADR 语义与重建提交证据边界，见[治理加固记录](docs/archive/reviews/2026-10-22-governance-hardening.md)。
 

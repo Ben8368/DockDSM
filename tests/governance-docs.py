@@ -131,6 +131,25 @@ def mutate(base: Path, name: str, old: str, new: str) -> None:
     path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
 
 
+def add_adr(case: Path, filename: str, status: str = '已接受') -> None:
+    number = filename[:4]
+    (case / 'docs' / 'ADR' / filename).write_text(
+        f'# ADR {number}：fixture\n\n- 状态：{status}\n- 日期：2026-10-22\n',
+        encoding='utf-8', newline='\n')
+    index = case / 'docs' / 'ADR' / 'README.md'
+    text = index.read_text(encoding='utf-8')
+    index.write_text(text + f'| [{number}]({filename}) | {status} | fixture |\n',
+                     encoding='utf-8', newline='\n')
+
+
+def set_adr_status(case: Path, status: str, successor: str = '') -> None:
+    lines = ['- 状态：' + status]
+    if successor:
+        lines.append(f'- 替代决定：[ADR 0002]({successor})')
+    mutate(case, 'docs/ADR/0001-fixture.md', '- 状态：已接受', '\n'.join(lines))
+    mutate(case, 'docs/ADR/README.md', '| 已接受 |', f'| {status} |')
+
+
 def main() -> int:
     failures = 0
     with tempfile.TemporaryDirectory(prefix='dockdsm-governance-') as tmp:
@@ -153,9 +172,16 @@ def main() -> int:
                 mutate(case, 'docs/ADR/0001-fixture.md', '- 状态：已接受', '- 状态：部分替代'),
                 mutate(case, 'docs/ADR/README.md', '| 已接受 |', '| 部分替代 |'))),
             ('replaced-without-link', False, '缺少指向替代 ADR 的链接',
-             lambda case: (
-                 mutate(case, 'docs/ADR/0001-fixture.md', '- 状态：已接受', '- 状态：已替代'),
-                 mutate(case, 'docs/ADR/README.md', '| 已接受 |', '| 已替代 |'))),
+             lambda case: set_adr_status(case, '已替代')),
+            ('adr-duplicate-number', False, '编号 0001 重复',
+             lambda case: add_adr(case, '0001-other.md')),
+            ('replaced-non-adr-link', False, '编号不同的 ADR 文件',
+             lambda case: set_adr_status(case, '已替代', '../PRODUCT.md')),
+            ('replaced-self-link', False, '编号不同的 ADR 文件',
+             lambda case: set_adr_status(case, '已替代', '0001-fixture.md')),
+            ('replaced-valid-link', True, '', lambda case: (
+                add_adr(case, '0002-fixture.md'),
+                set_adr_status(case, '已替代', '0002-fixture.md'))),
         ]
 
         for name, accepted, fragment, prepare in cases:
