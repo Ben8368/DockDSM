@@ -35,6 +35,7 @@ Windows PowerShell 读取或输出中文时使用 UTF-8；文件一律保存为 
 - 客观验证必须给出命令和结果；真机/TCG 冷启动与管理面结论必须保留证据，不能由构建通过代替。
 - 当前状态只写 [CONTEXT.md](CONTEXT.md)；风险与技术债分开登记；长期决策写 ADR。
 - 提交信息与 AI `Co-authored-by` trailer 以 [docs/AI_RULES.md](docs/AI_RULES.md) 为准。
+- PR 推送后按 [docs/AI_RULES.md](docs/AI_RULES.md) 的非阻塞流程汇报；只有用户要求本轮合并时才等待远端 `CI result`。
 - 默认使用中文汇报；标识符、命令、路径、API 字段和专有名词保留原文。
 
 ## 治理文档自治理

@@ -10,9 +10,13 @@ ARC 当前是架构/实现参考，不代表 ARC 源码已复制、合并或随 
 
 ## 独立维护与仓库历史
 
-DockDSM 由 Ben8368 独立维护，拥有自己的产品决策、问题跟踪和发布，不代表上述项目或 Synology 官方产品/背书。DockDSM GitHub 仓库历史已重建为单一初始化提交；先前可见的 DockDSM 提交链由维护者本地备份，并保留在[只读历史归档仓库](https://github.com/Ben8368/DockDSM-archive-20261022)。新的 Git 根提交不应被误读为所有代码均由该提交作者原创。
+DockDSM 由 Ben8368 独立维护，拥有自己的产品决策、问题跟踪和发布，不代表上述项目或 Synology 官方产品/背书。DockDSM GitHub 仓库历史已重建为单一初始化提交；先前可见的 DockDSM 提交链由维护者本地备份，并保留在[只读历史归档仓库](https://github.com/Ben8368/DockDSM-archive-20261022)。新的 Git 根提交不应被误读为所有代码均由该提交作者原创；GitHub contributor 图、外部 fork 与副本不受新仓库重建控制。
 
 项目及镜像身份为 `Ben8368/DockDSM` / `ghcr.io/ben8368/dockdsm`。GHCR 旧包不会因 Git 历史重建而自动删除或改名；新镜像的构建发布需走 [CI / Publishing](ci.md#publishing)。
+
+## 已重建根提交的证据边界
+
+2026-10-22 当天，初始化根提交曾为 [`2bebdb2`](https://github.com/Ben8368/DockDSM/commit/2bebdb27af7b9d0185ce93b96a4b4eb0525b9331)，随后被当前根提交 `2da1c3d` 取代。`2bebdb2` 不在 `master` 可达历史中，只读归档仓库也不包含它，且该归档仓库已设为只读。为保留证据，主仓库已建立带注解 tag `refs/tags/evidence/2bebdb2`；需要长期引用时使用此 tag，不要依赖可达历史或归档仓库。
 
 ## 兼容边界
 

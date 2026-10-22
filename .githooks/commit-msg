@@ -2,7 +2,7 @@
 set -eu
 
 reject() {
-    printf '%s\n' "virtual-dsm: $1" >&2
+    printf '%s\n' "DockDSM: $1" >&2
     printf '%s\n' \
         'Add the actual AI tool trailer in a separate final paragraph:' \
         '  Co-authored-by: Codex <codex@openai.com>' \

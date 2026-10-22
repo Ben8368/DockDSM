@@ -23,15 +23,15 @@
 ## 当前阻断与风险
 
 - ARC 尚未进入 Docker/QEMU 生产镜像或当前默认启动链；现有 ARM64 是 direct boot，不是 ARC。ARC x86 以及 ARM64 loader 均未验收，见 [ARC 路线](docs/arc-integration.md) 与 [RISK-006](docs/RISK_REGISTER.md)。
-- 旧仓库已作为 [历史归档](https://github.com/Ben8368/DockDSM-archive-20261022) 保留；GitHub contributor 图及外部 fork/副本不受新仓库重建控制。
 - 既有 ARM64 Phase 4A/K5 与 Phase 3/F5 证据只适用于记录的 DS124 direct-boot 环境，不可转用于 ARC 启动链或裸机可移植性声明。
 - RK3588、Mac 新容器后端及本轮性能基线未运行；设备软件/资源需盘点，见 [RISK-002/007](docs/RISK_REGISTER.md)。
 
 ## 最近验证
 
 - 2026-10-22：README/部署文档与 CI 重写；本地静态、策略和合成回归通过，见 [验证记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。云端结果按当前 `master` SHA 的 [Actions](https://github.com/Ben8368/DockDSM/actions) 核验，不以旧 run 代替。
-- 2026-10-22：同步远端 `2bebdb2` 并形成规划；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
+- 2026-10-22：同步当时远端根提交（现由 `refs/tags/evidence/2bebdb2` 固定；该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
 - 2026-10-22：机器人授权、Issue 派单、Dashboard、PR 的 CI 与本地配置/署名校验见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)；最终根提交云端结果按当前 SHA 核验。
+- 2026-10-22：核验 master 分支保护，并加固治理检查、ADR 语义与重建提交证据边界，见[治理加固记录](docs/archive/reviews/2026-10-22-governance-hardening.md)。
 
 ## 按需入口
 

@@ -18,7 +18,7 @@
 ## Evidence
 
 - [ ] `python3 scripts/governance-docs-check.py`
-- [ ] 相关 CI / 本地命令结果
+- [ ] 相关 CI / 本地命令结果（未等待远端时标注“`CI result` 待核验”）
 - [ ] CONTEXT / RISK / TD / ADR 已更新到唯一事实源（如适用）
 - [ ] AI / 依赖机器人的改动与建议未降低测试强度或绕过人工审查（如适用）
 

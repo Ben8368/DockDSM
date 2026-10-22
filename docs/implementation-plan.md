@@ -1,6 +1,6 @@
 # DockDSM 运行架构与性能实施计划
 
-本文件固定工作包、依赖和退出条件；执行状态只在 [CONTEXT](../CONTEXT.md) 更新。设计依据是维护者指定的[项目分析对话](https://chatgpt.com/share/6ad9a9ea-a228-83ea-9c94-b4c2aaadc0fa)与 2026-10-22 源码快照 `2bebdb27af7b9d0185ce93b96a4b4eb0525b9331`。本轮交付为规划文档，不实现控制器、启动配置或性能补丁。
+本文件固定工作包、依赖和退出条件；执行状态只在 [CONTEXT](../CONTEXT.md) 更新。设计依据是维护者指定的[项目分析对话](https://chatgpt.com/share/6ad9a9ea-a228-83ea-9c94-b4c2aaadc0fa)与 2026-10-22 源码快照 tag `refs/tags/evidence/2bebdb2`（解引用为 `2bebdb2`；该根提交已被当前根提交取代，证据边界见 [PROVENANCE](PROVENANCE.md#已重建根提交的证据边界)）。本轮交付为规划文档，不实现控制器、启动配置或性能补丁。
 
 ## 方向与边界
 

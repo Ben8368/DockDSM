@@ -31,9 +31,12 @@ CI 验证仓库当前已有实现，不下载 DSM PAT、不启动真实 DSM、�
 - Plan、Docs、Lint、双架构合成、补丁与 smoke 必须 success。
 - 计划要求镜像时必须 success；只有明确的 images=false 才接受镜像 skipped。
 - 失败、取消、缺失输出、非预期 skipped 或依赖集合漂移均返回非零。
-- master 的 required check 使用稳定的 `CI result` 并绑定 GitHub Actions；不可只要求某个可能跳过的子 job。PR、最新基线、讨论解决与管理员约束遵循 [ADR 0007](ADR/0007-bot-collaboration.md)。实际启用状态见 [CONTEXT](../CONTEXT.md)。
+- master 的 required check 使用稳定的 `CI result` 并绑定 GitHub Actions；不可只要求某个可能跳过的子 job。PR、最新基线、讨论解决与管理员约束遵循 [ADR 0007](ADR/0007-bot-collaboration.md)。
+- 2026-10-22 经 GitHub API 核验：`master` 使用 classic branch protection（Rulesets 未启用），必需检查为 `CI result`（strict），要求线性历史、解决审查讨论、禁止强推与删除分支，`enforce_admins=true`；required approving reviews = 0，符合单维护者设计。规则变更时更新本行日期与内容。
 
 普通 push/PR 的新提交可取消旧检查；手动和发布运行不由较新提交取消。CI 不自动合并、提交或发布。
+
+PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前用 `gh pr checks <number>` 确认 `CI result` 为 success。
 
 ## 检查覆盖
 
@@ -59,6 +62,7 @@ CI 策略由 [tests/ci-policy.py](../tests/ci-policy.py)回归，覆盖根提交
 ```bash
 python3 -m pip install PyYAML==6.0.3
 python3 scripts/governance-docs-check.py
+python3 tests/governance-docs.py
 python3 tests/branding.py
 python3 tests/ci-policy.py
 python3 scripts/check-tree.py
