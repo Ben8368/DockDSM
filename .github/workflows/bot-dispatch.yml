@@ -1,0 +1,67 @@
+name: Dispatch small bot tasks
+
+on:
+  issues:
+    types: [opened, labeled, reopened]
+
+permissions:
+  issues: write
+
+concurrency:
+  group: bot-dispatch-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    if: github.event.issue.state == 'open' && contains(github.event.issue.labels.*.name, 'bot:request')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      # No checkout, untrusted code execution, PAT, or workflow dispatch.
+      - name: Authorize and dispatch the scoped task
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const issue_number = context.payload.issue.number;
+            const {data: issue} = await github.rest.issues.get({owner, repo, issue_number});
+            const labels = new Set(issue.labels.map(label => label.name));
+            const blocked = ['risk:high', 'security', 'data-loss', 'arm64', 'qemu',
+              'needs:hardware-test', 'hardware-testing', 'phase-acceptance',
+              'agent:codex', 'jules', 'dependencies', 'ci'];
+            if (issue.state !== 'open' || issue.pull_request || !labels.has('bot:request') ||
+                blocked.some(label => labels.has(label))) {
+              core.info('Not an eligible small task; no dispatch.');
+              return;
+            }
+            // Require both the author and triggering actor to have current write access.
+            // A public form, an old author_association, or a bot comment is not authorization.
+            for (const username of new Set([issue.user.login, context.actor])) {
+              if (!username || username.endsWith('[bot]')) return;
+              const {data} = await github.rest.repos.getCollaboratorPermissionLevel({owner, repo, username});
+              if (!['admin', 'maintain', 'write'].includes(data.permission)) {
+                core.info('Maintainer authorization required; no dispatch.');
+                return;
+              }
+            }
+            const body = issue.body || '';
+            function field(name) {
+              const heading = '### ' + name + '\n';
+              const normalized = body.replace(/\r\n/g, '\n');
+              const start = normalized.indexOf(heading);
+              if (start < 0 || normalized.indexOf(heading, start + heading.length) >= 0) return '';
+              return normalized.slice(start + heading.length).split('\n### ')[0].trim();
+            }
+            const category = field('Task category');
+            const paths = field('Allowed paths').split(/\r?\n/).map(path => path.trim()).filter(Boolean);
+            const safePath = path => /^(?:readme\.md|docs\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.md|tests\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:py|sh))$/.test(path) &&
+              !/^(?:docs\/(?:ADR|archive|lessons)\/|docs\/(?:ci|platforms|arm64[^/]*|arc[^/]*|runtime[^/]*)\.md$|tests\/(?:qemu|surveillance))/.test(path);
+            if (!['Documentation', 'Tests'].includes(category) || paths.length < 1 || paths.length > 3 ||
+                !paths.every(safePath) ||
+                !field('Requested change') || !field('Validation command') ||
+                !field('Authorization').includes('[x] I authorize Jules to implement only this scoped task.')) {
+              core.info('Incomplete or out-of-scope request; no dispatch.');
+              return;
+            }
+            await github.rest.issues.addLabels({owner, repo, issue_number, labels: ['jules']});
+            core.info('Dispatched scoped maintainer task to Jules.');

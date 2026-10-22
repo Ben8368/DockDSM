@@ -95,8 +95,8 @@ git diff --check
 - **Stale**：90 天标记，不关闭；draft、依赖、安全、数据丢失、ARM/QEMU 等保护标签豁免。
 - **Dependabot**：版本更新 PR limit=0，避免与 Renovate 重复；保留 Alerts 与 security updates，安全修复 PR 仍须 CI 和人工合并。
 - **Renovate**：按[分阶段迁移](renovate-migration.md)准备受控接入；配置先要求所有普通更新经 Dashboard 批准，安全修复归属和切换条件由该文档定义。启用及验收状态只见 [CONTEXT](../CONTEXT.md)。
-- **CodeRabbit**：自动审查面向 master 的非 draft PR；关闭自动修复、自动补测试等写入功能。实际 App 授权与审查证据见 [CONTEXT](../CONTEXT.md)。
-- **Jules / Codex**：按[维护职责](MAINTAINERS.md)分派 Issue；禁止自动互相派单，Jules 的 CI 修复不能扩大原任务范围。
+- **CodeRabbit**：自动审查面向 master 的非 draft PR；低风险 PR 原生自动修复条件见[机器人操作约定](bot-automation.md)，实际启用与证据见 [CONTEXT](../CONTEXT.md)。
+- **Jules / Codex**：维护者小任务表单经 [bot-dispatch](../.github/workflows/bot-dispatch.yml) 校验后派给 Jules；仅 issues:write、不 checkout，不执行外部输入。Codex 接管核心修复；机器人不递归派单，CI 修复不扩大任务范围。
 - **Docker Hub description**：删除未使用的 workflow；项目发布渠道为 GHCR，README 变更不再触发无凭据的同步空任务。
 
 不启用自动发布、自动合并、Release Please、Codecov 或重复依赖机器人。
