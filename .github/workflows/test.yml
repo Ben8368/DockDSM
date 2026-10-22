@@ -114,6 +114,7 @@ jobs:
           python tests/surveillance/install.py
           python tests/guest-integrations.py
           bash tests/guest-clock.sh
+          bash tests/healthcheck.sh
       - name: Synthetic image and installer checks (no DSM downloads)
         run: |
           python tests/image-validation.py

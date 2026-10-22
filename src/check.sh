@@ -9,9 +9,18 @@ cd /run
 
 [ -f "/run/shm/qemu.end" ] && echo "QEMU is shutting down..." && exit 1
 
-# Treat the startup window as healthy so container health checks do not restart
-# the service before QEMU has had time to publish its PID.
-[ ! -s "/run/shm/qemu.pid" ] && echo "QEMU is not running yet..." && exit 0
+if [ ! -s "/run/shm/qemu.pid" ]; then
+  echo "QEMU is not running yet..."
+  exit 1
+fi
+
+pid=$(<"/run/shm/qemu.pid")
+pid=$(echo "$pid" | tr -d '[:space:]')
+
+if [[ ! "$pid" =~ ^[1-9][0-9]*$ ]] || ! kill -0 "$pid" 2>/dev/null; then
+  echo "QEMU process is not running..."
+  exit 1
+fi
 
 disabled "$NETWORK" && echo "Networking is disabled." && exit 0
 
@@ -21,7 +30,10 @@ gateway="/run/shm/qemu.gw"
 
 # dsm.url is written only after the guest agent reports both the DSM
 # address and its configured HTTP port.
-[ ! -s "$file" ] && echo "DSM has not enabled networking yet..." && exit 0
+if [ ! -s "$file" ]; then
+  echo "DSM has not enabled networking yet..."
+  exit 1
+fi
 
 location=$(<"$file")
 
