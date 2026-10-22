@@ -1,8 +1,8 @@
 # 当前状态
 
 > **最后确认：** 2026-10-22
-> **阶段：** 性能基线先行与渐进运行架构规划已落文档；本轮未实现新功能或进行设备验收。
-> **代码基线：** 新建 DockDSM GitHub 仓库的 `master` 仅有一个初始化根提交；产品代码仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct-boot ARM64。
+> **阶段：** 性能基线与运行架构规划已落文档；x86 安装恢复保护和启动健康检查已合入并通过 CI，未进行 DSM/设备验收。
+> **代码基线：** DockDSM `master` 已包含治理、自动化、健康检查与安装恢复保护；产品代码仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct-boot ARM64。
 
 ## 当前决策
 
@@ -11,7 +11,7 @@
 - 设备为 x86、MacBook Air M5、RK3588；RK 仅 Docker 容器验证，Mac 比较容器后端后选型，详见[测试矩阵](docs/test-matrix.md)。
 - 当前 `virtualdsm` 与 DS124 `rtd1619b` 启动实现和存储兼容边界保持不变；见 [平台契约](docs/platforms.md)。
 - CI 已采用保守范围路由、原生双架构检查和统一 `CI result`；发布仍需手动授权，见 [CI 设计](docs/ci.md)。
-- Renovate / Jules / CodeRabbit 已接入；[依赖看板 #3](https://github.com/Ben8368/DockDSM/issues/3)与 Jules 文档 PR 已生成，普通依赖仍先审批，Dependabot 负责安全修复；低风险 PR 自动修复规则已启用，Issue 自动派单待 workflow 合并；边界见 [ADR 0008](docs/ADR/0008-scoped-bot-autofix.md)。
+- Renovate / Jules / CodeRabbit 已接入；[依赖看板 #3](https://github.com/Ben8368/DockDSM/issues/3)的 `actions/github-script` v9 更新已批准并生成 PR #11，普通依赖仍须人工审查和合并；Issue 自动派单 workflow 已合入，端到端派单证据仍按 [RISK-008](docs/RISK_REGISTER.md#risk-008p1机器人自动写入与自动派单端到端未验收) 跟进，边界见 [ADR 0008](docs/ADR/0008-scoped-bot-autofix.md)。
 - 生产 QEMU 补丁仍只经 [8.2.2 补丁系列](patches/qemu/8.2.2/README.md)进入镜像。
 
 ## 近期优先级
@@ -28,6 +28,7 @@
 
 ## 最近验证
 
+- 2026-10-22：x86 不完整安装保盘修复与启动健康检查分别经 PR #9、#8 合入，CI 和合成回归通过；未运行 DSM 冷启动或设备验收，见[修复与派单记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
 - 2026-10-22：README/部署文档与 CI 重写；本地静态、策略和合成回归通过，见 [验证记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。云端结果按当前 `master` SHA 的 [Actions](https://github.com/Ben8368/DockDSM/actions) 核验，不以旧 run 代替。
 - 2026-10-22：同步当时远端根提交（现由 `refs/tags/evidence/2bebdb2` 固定；该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
 - 2026-10-22：机器人授权、Issue 派单、Dashboard、PR 的 CI 与本地配置/署名校验见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)；最终根提交云端结果按当前 SHA 核验。
