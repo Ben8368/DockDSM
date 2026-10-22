@@ -1,0 +1,15 @@
+DockDSM
+
+Independently maintained by Ben8368.
+
+DockDSM acknowledges and thanks:
+- vdsm/virtual-dsm for the Docker/QEMU Virtual DSM foundation used by this codebase.
+- AuxXxilium/arc for the guided ARC loader architecture and reference project.
+
+Parts of DockDSM derive from vdsm/virtual-dsm. Its original authors and
+contributors retain attribution, and the inherited MIT license is preserved in
+license.md. Acknowledgment does not replace source notices or license terms.
+ARC is currently a reference and is not represented as integrated code.
+Third-party components and Synology DSM retain their own licenses and ownership.
+DockDSM is not affiliated with or endorsed by either project or Synology Inc.
+See docs/PROVENANCE.md for details.
