@@ -56,6 +56,8 @@ reviews:
         Check input handling, path traversal, command execution, and credential
         exposure.
 
+  # On-demand controls; scoped continuous repairs are managed in Triage Rules.
+  # See docs/bot-automation.md. These flags do not enable a default PR checkbox.
   finishing_touches:
     docstrings:
       enabled: false
