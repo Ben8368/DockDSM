@@ -1,9 +1,10 @@
 # ADR 0004：重建仓库历史并确立 ARC/ARM64 路线
 
-- 状态：已替代
+- 状态：部分替代
+- 替代范围：统一 ARC 目标启动链及优先顺序由 ADR 0006 替代；历史重建、归属、独立维护与数据隔离决定继续有效。
 - 日期：2026-10-22
 - supersedes：ADR 0003 中“保留既有 Git 历史”的决定；不撤销其内部标识兼容边界。
-- superseded by：[ADR 0006](0006-runtime-profiles-and-container-first.md) 替代统一 ARC 目标启动链及优先顺序；历史重建、归属、独立维护和数据隔离决定继续保留。
+- superseded by：[ADR 0006](0006-runtime-profiles-and-container-first.md)
 
 ## 背景
 

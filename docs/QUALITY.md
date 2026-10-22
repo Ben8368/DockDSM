@@ -24,7 +24,7 @@
 | Phase 3 F5 + Watchdog L5 | [Strict F5 boot, watchdog scan, persistence and UI shutdown evidence](../research/arm64/production-phase3.md#strict-f5-completed-acceptance-evidence--2026-10-15) |
 | Phase 4A K5 | [Official PAT fresh install, configured KVM boots, volume, marker and lifecycle evidence](../research/arm64/production-phase4a.md) |
 
-统一 CI result 通过是自动通行条件；人工 `🚦 Audit Report` 仍是源码合并前的独立门禁。CodeQL、PR 标签与 stale 自动化不替代该审查。
+统一 CI result 通过是自动通行条件；人工 `🚦 Audit Report` 仍是源码合并前的独立门禁。该门禁是流程性强制：CI 不检查 PR 正文，由维护者在合并前确认；PR 模板、标签和机器人评论只提供辅助信息，不能代替人工确认。CodeQL 与 stale 自动化同样不替代该审查。
 
 ## 完成定义（摘要）
 

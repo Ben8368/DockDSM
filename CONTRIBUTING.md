@@ -16,6 +16,7 @@
 
 ```bash
 python3 scripts/governance-docs-check.py
+python3 tests/governance-docs.py
 python3 scripts/git-hooks-test.py
 python3 tests/branding.py
 python3 tests/ci-policy.py
