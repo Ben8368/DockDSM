@@ -1,6 +1,6 @@
 # 当前状态
 
-> **最后确认：** 2026-10-22
+> **最后确认：** 2026-10-23
 > **阶段：** 性能基线与运行架构规划已落文档；x86 安装恢复保护和启动健康检查已合入并通过 CI，未进行 DSM/设备验收。
 > **代码基线：** DockDSM `master` 已包含治理、自动化、健康检查与安装恢复保护；产品代码仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct-boot ARM64。
 
@@ -28,9 +28,9 @@
 
 ## 最近验证
 
+- 2026-10-23：PR #19 gitlink/路径修复通过本地 L0/L1 和固定上游补丁应用；DSM/硬件验收未运行，见[回归证据](docs/archive/reviews/2026-10-23-pr19-review-fixes.md)。
 - 2026-10-22：W01 锁定 Docker/工具/Python 输入；native amd64 镜像及 QEMU 无缓存构建、QEMU 补丁与镜像回归通过，Python 3.13 amd64/arm64 wheel 哈希解析通过。APT 仍未固定；native arm64、DSM 冷启动未运行，详见[依赖清单](docs/dependency-locks.md)与 [RISK-009](docs/RISK_REGISTER.md)。
 - 2026-10-22：x86 不完整安装保盘修复与启动健康检查分别经 PR #9、#8 合入，CI 和合成回归通过；未运行 DSM 冷启动或设备验收，见[修复与派单记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
-- 2026-10-22：CI/部署重写的本地与云端验证见[记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。
 - 2026-10-22：重建根提交边界见[PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)；范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
 - 2026-10-22：自动化配置、署名校验及云端结果见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)。
 - 2026-10-22：核验 master 分支保护，并加固治理检查、ADR 语义与重建提交证据边界，见[治理加固记录](docs/archive/reviews/2026-10-22-governance-hardening.md)。

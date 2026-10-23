@@ -36,7 +36,7 @@ CI 验证仓库当前已有实现，不下载 DSM PAT、不启动真实 DSM、�
 
 普通功能分支 push 不触发常规 CI；PR 的每个新 head 会运行对应检查。普通 push/PR 的新提交可取消旧检查，但被取消前已经消耗的 runner 时间无法收回。手动运行不会主动取消同组旧检查，但 `master` push 可取消正在运行的手动 `test.yml`；发布运行不由较新提交取消。CI 不自动合并、提交或发布。
 
-PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前用 `gh pr checks <number>` 确认 `CI result` 为 success。
+PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前用 `gh pr checks <number>` 确认 `CI result` 与 CodeRabbit 均为 success。CodeRabbit 是流程门禁，不是 branch protection 的 required check；细则见 [AI_RULES](AI_RULES.md#pr-推送与远端验证)。
 
 默认每个工作包只创建一个直接面向 `master` 的 PR，可用多个 commit 保持改动可审查。依赖改动先在本地整合后一次性推送，避免 stacked PR 在前项合入后改 base / 同步新 head，导致 CI 和自动审查重复运行。确需多个 PR 时按顺序逐个创建：前项合入后，再从最新 `master` 建立并推送下一项。详细协作规则见 [AI_RULES](AI_RULES.md#pr-推送与远端验证)。
 
@@ -97,7 +97,7 @@ git diff --check
 - **Stale**：90 天标记，不关闭；draft、依赖、安全、数据丢失、ARM/QEMU 等保护标签豁免。
 - **Dependabot**：版本更新 PR limit=0，避免与 Renovate 重复；保留 Alerts 与 security updates，安全修复 PR 仍须 CI 和人工合并。
 - **Renovate**：按[分阶段迁移](renovate-migration.md)准备受控接入；配置先要求所有普通更新经 Dashboard 批准，安全修复归属和切换条件由该文档定义。启用及验收状态只见 [CONTEXT](../CONTEXT.md)。
-- **CodeRabbit**：自动审查面向 master 的非 draft PR；低风险 PR 原生自动修复条件见[机器人操作约定](bot-automation.md)，实际启用与证据见 [CONTEXT](../CONTEXT.md)。
+- **CodeRabbit**：自动审查面向 master 的非 draft PR；合入前须其 commit status 为 success，但不写入 branch protection required checks。低风险 PR 原生自动修复条件见[机器人操作约定](bot-automation.md)，实际启用与证据见 [CONTEXT](../CONTEXT.md)。
 - **Jules / Codex**：维护者小任务表单经 [bot-dispatch](../.github/workflows/bot-dispatch.yml) 校验后派给 Jules；仅 issues:write、不 checkout，不执行外部输入。Codex 接管核心修复；机器人不递归派单，CI 修复不扩大任务范围。
 - **Docker Hub description**：删除未使用的 workflow；项目发布渠道为 GHCR，README 变更不再触发无凭据的同步空任务。
 

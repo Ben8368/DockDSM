@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Offline regression tests for CI planning, fail-closed gating and workflow wiring."""
+import contextlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -8,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 import yaml
 
@@ -157,6 +160,52 @@ class TreeTests(unittest.TestCase):
         self.assertTrue(tree.check('a.py', b'\xff'))
         self.assertTrue(tree.check('a.md', b'\xef\xbb\xbfhello'))
         self.assertEqual(tree.check('screen.jpg', b'\xff\x00'), [])
+
+    def check_fixture(self, *, initialized=False, missing=False, bad_text=False):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=root,
+                                               stderr=subprocess.PIPE, text=True).strip()
+
+            git('init', '-q')
+            git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+                '-c', 'core.hooksPath=.no-hooks', 'commit', '-q', '--allow-empty', '-m', 'fixture')
+            revision = git('rev-parse', 'HEAD')
+            name = 'guide with spaces.md'
+            (root / name).write_bytes(b'hello \n' if bad_text else b'hello\n')
+            git('-c', 'core.autocrlf=false', 'add', '--', name)
+            git('update-index', '--add', '--cacheinfo', '160000', revision, 'vendor/arc with spaces')
+            if initialized:
+                nested = root / 'vendor/arc with spaces'
+                nested.mkdir(parents=True)
+                subprocess.run(['git', 'init', '-q', str(nested)], check=True,
+                               capture_output=True)
+                (nested / 'ignored.md').write_bytes(b'inherited tree \r\n')
+            if missing:
+                (root / name).unlink()
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with mock.patch.object(tree, 'ROOT', root), contextlib.redirect_stdout(stdout), \
+                    contextlib.redirect_stderr(stderr):
+                code = tree.main()
+            return code, stderr.getvalue()
+
+    def test_uninitialized_gitlink_is_not_a_missing_file(self):
+        self.assertEqual(self.check_fixture(), (0, ''))
+
+    def test_initialized_gitlink_is_not_scanned_as_a_regular_file(self):
+        self.assertEqual(self.check_fixture(initialized=True), (0, ''))
+
+    def test_gitlink_does_not_hide_missing_regular_files(self):
+        code, errors = self.check_fixture(missing=True)
+        self.assertEqual(code, 1)
+        self.assertIn('guide with spaces.md: tracked file is missing', errors)
+
+    def test_gitlink_does_not_hide_invalid_regular_text(self):
+        code, errors = self.check_fixture(bad_text=True)
+        self.assertEqual(code, 1)
+        self.assertIn('guide with spaces.md:1: trailing whitespace', errors)
 
     def test_patch_context_is_preserved(self):
         self.assertEqual(tree.check('a.patch', b' \n+code\n'), [])

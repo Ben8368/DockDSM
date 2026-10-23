@@ -2,6 +2,10 @@
 
 长期边界见 [ADR 0008](ADR/0008-scoped-bot-autofix.md)，启用与验收状态只见 [CONTEXT](../CONTEXT.md)。
 
+## PR 合并前：等待 CodeRabbit
+
+维护者或 Agent 合入前须确认 CodeRabbit commit status 为 success，并与 `CI result` 一并核验；`CI result` 先绿时仍应等待审查结束。不把 CodeRabbit 设为 GitHub required check。完整表述见 [AI_RULES](AI_RULES.md#pr-推送与远端验证)。
+
 ## PR：CodeRabbit Triage Auto-fix
 
 原生规则名为 `DockDSM — low-risk PR autofix`，位于 CodeRabbit 的 Triage → Rules。选择单一 DockDSM 仓库，不能选择 All（会包含其它及未来仓库）。

@@ -22,7 +22,14 @@ Docker 负责运行 QEMU 进程，并不直接提供虚拟化。ARC 在同一台
 - `src/entry.sh` 根据 `DSM_PLATFORM` 建立当前虚拟机启动命令。
 - `src/platform/virtualdsm.sh` 是现有 Virtual DSM x86 启动路径。
 - `src/platform/rtd1619b.sh` 是 DS124 ARM64 的直接 kernel/initrd 路径，依赖现有 QEMU ARM64 补丁和特定磁盘/硬件契约；它不是 ARC，也不能直接视为可插入 ARC 的现成模块。
-- `docs/PROVENANCE.md` 说明 DockDSM 与 vdsm/virtual-dsm 的代码来源；ARC 当前仅为致谢的参考项目，并未合并其代码。
+- `vendor/arc` 以 Git submodule 固定 ARC 上游源码；DockDSM overlay 独立位于 `patches/arc/`。它不进入现有镜像构建路径。初始化和补丁说明见 [ARC 研究说明](../research/arc/README.md)；来源与许可边界见 [PROVENANCE](PROVENANCE.md)。
+
+### 源码融合状态
+
+- 已固定上游快照 `99195dbdf4e0a21c5304ddb06e07dc57419679bc`（ARC 4.1.2），不跟随浮动分支自动更新。
+- DockDSM overlay 在 ARC 型号列表添加架构列：读取平台配置 `arch`，缺省为 `x86_64`，并说明 ARC 当前不支持 ARM64。
+- 上游 README 的禁止商业使用声明、仓库 GPL-3.0 `LICENSE` 与个别文件 MIT 头部尚未厘清。当前用 submodule 保持源码来源边界，不把源码/构建产物捆绑至 DockDSM 镜像或发布物。
+- 这是源码入口与 UI overlay 的隔离研究接入，不等同于 `arc-x86` profile、DSM 安装/启动或生产支持已经实现。
 
 ## 实施路线
 
@@ -72,7 +79,7 @@ PoC 交付包需包含固定 commit/release、loader 校验、所有动态下载
 
 以下为本次路线制定时核对的公开项目资料；实施前须再次固定到实际采用的版本并复核。
 
-- [ARC README（commit `1e227408465a08660289c9a782edacd067cf747b`）](https://github.com/AuxXxilium/arc/blob/1e227408465a08660289c9a782edacd067cf747b/README.md)：说明当前 x86-64 loader、Buildroot/kexec 流程、full DSM 与 vDSM 区别及项目使用声明。
-- [ARC Docker 说明](https://github.com/AuxXxilium/arc/blob/1e227408465a08660289c9a782edacd067cf747b/docker.md) 与 [Dockerfile](https://github.com/AuxXxilium/arc/blob/1e227408465a08660289c9a782edacd067cf747b/Dockerfile)：QEMU 容器的 loader 镜像、数据盘及端口示例。
-- [ARC LICENSE](https://github.com/AuxXxilium/arc/blob/1e227408465a08660289c9a782edacd067cf747b/LICENSE)：采用/分发前须结合 README 声明及具体组件进行许可审查。
+- [ARC README（commit `99195dbdf4e0a21c5304ddb06e07dc57419679bc`）](https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md)：说明 x86-64 loader、构建流程及项目使用声明。
+- [ARC Docker 说明](https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/docker.md) 与 [Dockerfile](https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/Dockerfile)：QEMU 容器的 loader 镜像、数据盘及端口示例。
+- [ARC LICENSE](https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE)：标记 GPL-3.0；应与 README 的使用声明及具体组件声明一并审查。
 - [vdsm/virtual-dsm](https://github.com/vdsm/virtual-dsm)：DockDSM 现有代码的来源之一；完整来源记录见 [PROVENANCE](PROVENANCE.md)。
