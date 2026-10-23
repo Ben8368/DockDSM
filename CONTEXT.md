@@ -13,6 +13,7 @@
 - x86、MacBook Air M5、RK3588 分别取证；RK 仅 Docker 验证，Mac 后端需实测选型，见[测试矩阵](docs/test-matrix.md)。
 - 生产 QEMU 补丁只经 [8.2.2 系列](patches/qemu/8.2.2/README.md)进入镜像；CI 和机器人规则见 [CI](docs/ci.md) 与 [ADR 0008](docs/ADR/0008-scoped-bot-autofix.md)。
 - 后续 PR 不自动合并；正式镜像发布仍须另行授权。
+- Jules 额度（2026-10-23 核实）：Pro 为 100 task/滚动 24 小时、15 并发，与账户截图及[官方上限](https://jules.google/docs/usage-limits/)一致；[ADR 0010](docs/ADR/0010-scoped-jules-work-packages.md) 扩展受控工具工作包；本地规则已实现，远端部署、Jules 环境快照和扩容验收未完成。
 
 ## 近期优先级
 
@@ -28,6 +29,7 @@
 
 ## 最近验证
 
+- 2026-10-23：Jules 工作包与队列边界本地回归通过；远端部署/云端快照未执行，见[证据](docs/archive/reviews/2026-10-23-jules-work-packages.md)。
 - 2026-10-23：ARM 默认镜像选择与 Python 3.11 准入兼容性修复；双 Python 各 55 项准入及 Linux 合成回归通过，派单与未覆盖项见[修复记录](docs/archive/reviews/2026-10-23-install-mirror-python-compatibility.md)。
 - 2026-10-23：组件来源再核验、产物/收据绑定加固及离线故障注入回归见[组件准入记录](docs/archive/reviews/2026-10-23-bootloader-component-admission.md)；没有组件获准迁入/组合构建/分发。
 

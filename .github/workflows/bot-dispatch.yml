@@ -1,4 +1,4 @@
-name: Dispatch small bot tasks
+name: Dispatch scoped bot tasks
 
 on:
   issues:
@@ -6,9 +6,10 @@ on:
 
 permissions:
   issues: write
+  pull-requests: read
 
 concurrency:
-  group: bot-dispatch-${{ github.event.issue.number }}
+  group: bot-dispatch-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -28,7 +29,7 @@ jobs:
             const labels = new Set(issue.labels.map(label => label.name));
             const blocked = ['risk:high', 'security', 'data-loss', 'arm64', 'qemu',
               'needs:hardware-test', 'hardware-testing', 'phase-acceptance',
-              'agent:codex', 'jules', 'dependencies', 'ci'];
+              'agent:codex', 'jules', 'dependencies', 'ci', 'docker', 'guest'];
             if (issue.state !== 'open' || issue.pull_request || !labels.has('bot:request') ||
                 blocked.some(label => labels.has(label))) {
               core.info('Not an eligible small task; no dispatch.');
@@ -44,24 +45,81 @@ jobs:
                 return;
               }
             }
-            const body = issue.body || '';
-            function field(name) {
+            function field(name, body = issue.body || '') {
               const heading = '### ' + name + '\n';
               const normalized = body.replace(/\r\n/g, '\n');
               const start = normalized.indexOf(heading);
               if (start < 0 || normalized.indexOf(heading, start + heading.length) >= 0) return '';
               return normalized.slice(start + heading.length).split('\n### ')[0].trim();
             }
+            const listedPaths = body => field('Allowed paths', body).split(/\r?\n/)
+              .map(path => path.trim()).filter(Boolean);
             const category = field('Task category');
-            const paths = field('Allowed paths').split(/\r?\n/).map(path => path.trim()).filter(Boolean);
-            const safePath = path => /^(?:README\.md|readme\.md|docs\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.md|tests\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:py|sh))$/.test(path) &&
-              !/^(?:docs\/(?:ADR|archive|lessons)\/|docs\/(?:ci|platforms|arm64[^/]*|arc[^/]*|runtime[^/]*)\.md$|tests\/(?:qemu|surveillance))/.test(path);
-            if (!['Documentation', 'Tests'].includes(category) || paths.length < 1 || paths.length > 3 ||
-                !paths.every(safePath) ||
+            const paths = listedPaths(issue.body || '');
+            // Explicitly admitted offline tool bundle; never allow scripts/** or src/**.
+            const toolPaths = new Set(['scripts/dev/summarize-test-results.py',
+              'tests/dev/summarize-test-results.py', 'docs/dev/test-results.md']);
+            const protectedDocs = new Set(['bot-automation', 'jules-environment',
+              'implementation-plan', 'test-matrix', 'performance-baseline',
+              'mac-container-evaluation', 'dependency-locks', 'renovate-migration']);
+            const safeDoc = path => /^(?:README\.md|readme\.md|docs\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.md)$/.test(path) &&
+              !/^docs\/(?:archive|lessons|dev)\//.test(path) &&
+              !/^docs\/(?:ci|platforms|arm64[^/]*|arc[^/]*|runtime[^/]*)\.md$/.test(path) &&
+              !protectedDocs.has(path.slice(5, -3));
+            const safeTest = path => /^tests\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:py|sh)$/.test(path) &&
+              !/^tests\/(?:dev\/|fixtures\/|qemu|surveillance|arm|production|official|bootloader|ci-|bot-dispatch|jules-setup|proprietary|x86-installer|platform\.)/.test(path);
+            const safePath = path => category === 'Documentation' ? safeDoc(path) :
+              category === 'Tests' ? safeTest(path) || safeDoc(path) : toolPaths.has(path);
+            if (!['Documentation', 'Tests', 'Tooling'].includes(category) ||
+                paths.length < 1 || paths.length > (category === 'Tooling' ? 6 : 3) ||
+                new Set(paths).size !== paths.length || !paths.every(safePath) ||
+                (category === 'Tooling' && !paths.some(path => path.startsWith('scripts/'))) ||
                 !field('Requested change') || !field('Validation command') ||
-                !field('Authorization').includes('[x] I authorize Jules to implement only this scoped task.')) {
+                !field('Acceptance criteria') ||
+                !field('Authorization').includes('[x] I authorize Jules to implement only this scoped task.') ||
+                !field('Authorization').includes('[x] I verified dependencies, available quota, and exclusive file ownership.')) {
               core.info('Incomplete or out-of-scope request; no dispatch.');
               return;
             }
+            // Repository-wide serialization protects this read/check/label sequence.
+            // All list operations paginate; API failures abort before any label write.
+            const active = (await github.paginate(github.rest.issues.listForRepo,
+              {owner, repo, state: 'open', labels: 'jules', per_page: 100}))
+              .filter(item => !item.pull_request && item.number !== issue_number);
+            if (active.length >= 4) {
+              core.info('Four open Jules issues already occupy the pilot queue; no dispatch.');
+              return;
+            }
+            for (const other of active) {
+              const reserved = listedPaths(other.body || '');
+              if (!reserved.length || reserved.some(path =>
+                  !/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*\.[A-Za-z0-9]+$/.test(path) || paths.includes(path))) {
+                core.info('Active task has unknown or overlapping scope; no dispatch.');
+                return;
+              }
+            }
+            const prs = await github.paginate(github.rest.pulls.list,
+              {owner, repo, state: 'open', per_page: 100});
+            if (prs.filter(pr => pr.labels.some(label => label.name === 'jules')).length >= 5) {
+              core.info('Five open Jules PRs await integration; no dispatch.');
+              return;
+            }
+            for (const pr of prs) {
+              const files = await github.paginate(github.rest.pulls.listFiles,
+                {owner, repo, pull_number: pr.number, per_page: 100});
+              // GitHub caps this endpoint at 3000 files; do not assume completeness.
+              if (files.length >= 3000 || files.some(file => paths.includes(file.filename) ||
+                  paths.includes(file.previous_filename))) {
+                core.info('Open PR has overlapping or unbounded scope; no dispatch.');
+                return;
+              }
+            }
+            const {data: latest} = await github.rest.issues.get({owner, repo, issue_number});
+            if (latest.state !== 'open' || latest.body !== issue.body ||
+                !latest.labels.some(label => label.name === 'bot:request') ||
+                latest.labels.some(label => blocked.includes(label.name))) {
+              core.info('Issue changed during validation; no dispatch.');
+              return;
+            }
             await github.rest.issues.addLabels({owner, repo, issue_number, labels: ['jules']});
-            core.info('Dispatched scoped maintainer task to Jules.');
+            core.info('Requested Jules via label; confirm bot acknowledgement and task link separately.');
