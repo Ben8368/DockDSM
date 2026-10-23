@@ -13,6 +13,7 @@
 | ARM64 / DS124 / Phase 3 | [docs/arm64-development.md](docs/arm64-development.md)、[research/arm64/production-phase3.md](research/arm64/production-phase3.md)、[docs/arm64-runtime-state.md](docs/arm64-runtime-state.md) |
 | QEMU 补丁或 TCG | [patches/qemu/8.2.2/README.md](patches/qemu/8.2.2/README.md)、[docs/platforms.md](docs/platforms.md) |
 | CI、镜像发布、依赖更新 | [docs/ci.md](docs/ci.md) |
+| Jules 派单、任务拆分 | [docs/AI_RULES.md](docs/AI_RULES.md)、[docs/bot-automation.md](docs/bot-automation.md) |
 | 技术债、风险或阶段推进 | [docs/TECH_DEBT.md](docs/TECH_DEBT.md)、[docs/RISK_REGISTER.md](docs/RISK_REGISTER.md) |
 | 治理文档改动 | [docs/GOVERNANCE.md](docs/GOVERNANCE.md) |
 | 维护职责或长期决策 | [docs/MAINTAINERS.md](docs/MAINTAINERS.md)、[docs/ADR/README.md](docs/ADR/README.md) |
