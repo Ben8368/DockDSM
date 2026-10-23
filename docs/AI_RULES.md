@@ -5,11 +5,17 @@
 ## 1. 工作顺序
 
 ```text
-读取 Context / Lessons → 确认当前阶段与事实源 → 修改 → 红绿灯审查 → 客观验证 → 更新唯一权威文档 → 汇报
+读取 Context / Lessons → 检查宿主环境 → 确认当前阶段与事实源 → 修改 → 红绿灯审查 → 客观验证 → 更新唯一权威文档 → 汇报
 ```
 
 - 答疑或评审只做只读检查，除非用户同时要求修改。
 - 默认不自动提交、推送、发布或创建外部资源。
+- **开始任何实施、本地构建或验证前**，先检查并在本轮汇报中写明宿主环境；纯概念答疑可跳过。至少确认：
+  - OS：Windows / macOS / Linux（若为 WSL，标明“Windows + WSL”，不要只写 Linux）
+  - CPU 架构：`x86_64`/`amd64` 或 `arm64`/`aarch64`
+  - Shell：PowerShell / bash / zsh 等，后续命令按此选择
+  - 建议探测：`uname -s` / `uname -m`（Unix/WSL）；Windows 原生可用 `$PSVersionTable.OS` 与 `$env:PROCESSOR_ARCHITECTURE`
+  - 按探测结果选择路径、换行、包管理与 Docker/QEMU 命令；未确认前不得假设 Linux bash 或错误架构。可复发细节见 [host-env](lessons/host-env.md) 与 [windows](lessons/windows.md)。
 - 开始实施前评估任务复杂度；对范围清晰、低风险、可独立验收且符合 Jules 表单的简单文档 / 测试任务，主动考虑派单完成全部或部分工作，其余工作由当前执行者负责。纯答疑、紧耦合步骤或不适合机器人权限的任务直接本地处理，不为派单而拆分。
 
 ## 2. 红绿灯审查

@@ -4,7 +4,7 @@
 
 ## 开局与按需读取
 
-所有任务先读 [CONTEXT.md](CONTEXT.md) 和 [LESSONS.md](LESSONS.md)，再按本轮实际改动/审查对象加载命中项；文中提及某关键词不触发整条依赖链，不递归读取所有链接：
+所有任务先读 [CONTEXT.md](CONTEXT.md) 和 [LESSONS.md](LESSONS.md)；实施或本地验证前先按 [docs/AI_RULES.md](docs/AI_RULES.md) 检查宿主 OS/架构/Shell。再按本轮实际改动/审查对象加载命中项；文中提及某关键词不触发整条依赖链，不递归读取所有链接：
 
 | 任务 | 必读文档 |
 | --- | --- |
