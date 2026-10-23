@@ -1,8 +1,8 @@
 # 当前状态
 
 > **最后确认：** 2026-10-23
-> **阶段：** Phase 0 已合并；Phase 1 源码审计与版本锁定，源码迁移尚未准入。
-> **代码基线：** master `4a70602`；生产路径仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct boot。
+> **阶段：** Phase 1 — 组件准入；正式清单与离线门禁已实现，源码迁移尚未准入。
+> **代码基线：** 本轮起点 master `fcc7330`；生产路径仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct boot。
 
 ## 当前决策
 
@@ -16,7 +16,7 @@
 
 ## 近期优先级
 
-1. 逐组件澄清许可证范围、预编译 blob 来源与 Buildroot/GRUB 构建闭包，关闭源码迁移准入项。
+1. 取得 Buildroot Essential/Evo、LKM/Custom 对应源码及权利范围确认；缺口见[组件清单](research/bootloader/component-manifest.json)。
 2. 准入后在独立 PR 接管可构建源码，保留来源、许可、固定输入和回退路径。
 3. 接管后实现中立 Profile / Boot Provider 契约，以旧平台等价回归保护存储和生命周期。
 
@@ -24,9 +24,11 @@
 
 - 根 GPLv3、README 非商业声明、文件 MIT 头及依赖源码范围未闭合；不整体搬入争议内容或捆绑分发，见 [RISK-006](docs/RISK_REGISTER.md#risk-006p1arc-集成尚无运行与许可边界证据)。
 - 自有引导器未构建或接入生产；DS124 direct boot 证据不代表 ARM64 Bootloader 移植成功。
-- 本轮宿主为 Windows x64 + WSL Ubuntu x86_64；未运行 DSM L2、KVM L3、Mac 或 RK3588 测试；设备风险见 [RISK-002/007](docs/RISK_REGISTER.md)。
+- 本轮宿主 Windows AMD64 / PowerShell；Shell 回归经另行探测的 WSL Ubuntu x86_64 执行；未运行 DSM L2、KVM L3、Mac 或 RK3588 测试；设备风险见 [RISK-002/007](docs/RISK_REGISTER.md)。
 
 ## 最近验证
+
+- 2026-10-23：组件来源复核、离线门禁和故障注入回归见[组件准入记录](docs/archive/reviews/2026-10-23-bootloader-component-admission.md)；没有组件获准迁入/组合构建/分发。
 
 - 2026-10-23：PR #19 `5005083` 的 CI result / CodeRabbit success，3 条审查讨论已处理，合并为 `4a70602`；本地修复与远端门禁见[证据](docs/archive/reviews/2026-10-23-pr19-review-fixes.md)。
 - 2026-10-23：Phase 1 固定 Git objects 审计与离线回归的命令、结果和未覆盖项见[源码审计证据](docs/archive/reviews/2026-10-23-bootloader-source-audit.md)。

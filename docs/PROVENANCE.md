@@ -8,6 +8,10 @@ DockDSM 感谢 [vdsm/virtual-dsm](https://github.com/vdsm/virtual-dsm) 提供 Do
 
 ARC 源码仍由独立 submodule 提供，DockDSM 仓库只保存 gitlink 与本地补丁，不复制 ARC 源码文件或将其并入自有 MIT 代码。ARC 上游 README 声明禁止商业使用，仓库 `LICENSE` 标记 GPL-3.0，部分源文件另有 MIT 头部；其适用范围尚未澄清。因此当前不把 ARC 源码或构建产物捆绑到 DockDSM 镜像/发布物，不作商业使用授权声明。后续采用、构建或分发前，须按具体组件核实许可证、声明、来源和分发条件。Synology DSM、PAT、第三方基础镜像、QEMU 及其他依赖各自的权利与许可独立处理。源码接管方案与只读证据校验见[源码审计](bootloader-source-audit.md)；历史 overlay 见 [ARC 集成记录](arc-integration.md) 和 [ARC 研究说明](../research/arc/README.md)。最终自有引导器使用 DockDSM Bootloader 品牌，来源与许可证不因改名变化。
 
+## 组件来源与权利边界
+
+正式逐组件来源、声明、预编译身份、阻断与下一行动统一见 [component-manifest.json](../research/bootloader/component-manifest.json)，技术门禁及其非法律边界见[组件准入](bootloader-source-audit.md#正式组件准入清单权威入口)。公开源码、根 GPLv3 或某个文件的 MIT 头都不自动授予全部二进制/字体/固件的再分发权；Buildroot、GRUB、Linux kernel、各包和 DSM/PAT 条件独立核查。README 非商业声明与根/文件许可的适用关系由有权主体或合格审查澄清，不由工具选一个声明覆盖其他声明。未取得授权，不推定已获准；保留 AuxXxilium、原贡献者及文件级归属。
+
 ## 独立维护与仓库历史
 
 DockDSM 由 Ben8368 独立维护，拥有自己的产品决策、问题跟踪和发布，不代表上述项目或 Synology 官方产品/背书。DockDSM GitHub 仓库历史已重建为单一初始化提交；先前可见的 DockDSM 提交链由维护者本地备份，并保留在[只读历史归档仓库](https://github.com/Ben8368/DockDSM-archive-20261022)。新的 Git 根提交不应被误读为所有代码均由该提交作者原创；GitHub contributor 图、外部 fork 与副本不受新仓库重建控制。

@@ -54,6 +54,29 @@ python3 tests/bootloader-source-audit.py
 
 本地读取公开源码、静态审计和离线合成测试可以继续。组合产物发布、整体搬入有争议内容、商业授权结论和真实 DSM 安装不能由本审计自动放行。阻断和关闭证据统一见 [RISK-006](RISK_REGISTER.md#risk-006p1arc-集成尚无运行与许可边界证据)。
 
-## 下一工作包的准入
+## 正式组件准入清单（权威入口）
 
-先确认许可证范围与各预编译 blob 的可重建源码，建立 Buildroot/GRUB/模块依赖的固定输入清单，再在独立 PR 导入准入源码。之后才实现 DockDSM 品牌和 provider 接口；运行时用 `full-x86_64` / `full-arm64` 中立命名，旧 `virtualdsm` / `rtd1619b` 保留。ARM64 loader 研究等待 x86 工作链验收，已有 direct boot 证据不转移。
+[component-manifest.json](../research/bootloader/component-manifest.json) 是唯一逐组件状态/阻断/行动表。`baseline_mapping` 一对一保留上一轮全部 16 项，不合并 GRUB 配方与 seed，不以 Modules 的部分源码替代 LKM/Custom。主源码 commit/tree/既有摘要只引用 source-lock；检查快照的 commit/tree 只维护在[远端收据](../research/bootloader/evidence/github-observations-2026-10-23.json)。后者不是构建锁、完整源码交付或 release 对应关系证明。
+
+完整远端 tree 元数据保存在[对象索引](../research/bootloader/evidence/remote-trees-2026-10-23.json)，离线重建 Git tree SHA-1 并校验选定文本 blob/SHA256；未下载 release 资产。所有已观测固定二进制及 kernel 模板的大小/SHA256 在 manifest evidence 中，不再复制表格。远端 release API 的资产 digest 仅是上游声明，不等于本地验算，也不是批准摘要。
+
+```bash
+python3 scripts/check-bootloader-admission.py --check
+python3 scripts/check-bootloader-admission.py --strict
+python3 tests/bootloader-component-admission.py
+```
+
+- `--check`：封闭 schema、重复 JSON key/ID、全部原审计对象覆盖、路径边界、来源引用、Git 锁与本地摘要验证；允许如实记录阻断。输出按组件给出缺失条件和三个独立 gate。
+- `--strict`：全部组件证据与条件满足、状态为 APPROVED 才返回 0；未准入返回 2，无效清单/证据返回 1。不联网、不运行上游脚本、不安装依赖、不修改源仓库。路径参数相对于工作区；拒绝外部 gitdir/commondir、alternates、配置 include 及越界链接。复用原审计 Git reader，并禁用全局配置、fsmonitor、optional locks、lazy fetch/transports。
+- `source_import`、`combined_build`、`distribution` 分开计算，标签不能覆盖证据；检查快照无完整源码不能取得迁入资格。组合构建还要求主锁无未锁定依赖、无未认证 release/占位产物；分发还受 source-lock 的全局禁止约束。
+- 每条 verified 条件必须引用具有组件 ID、精确 source identity、condition、被校验 inputs、reviewer 及解释的独立本地 JSON 收据，且收据本身有 SHA256/bytes。URL、通用说明、状态字段或普通 LICENSE blob 不能冒充重建/权利评审收据。当前没有真实批准收据，测试中仅有合成收据。
+- 本工具证明版本/文件/记录的一致性，不验证审查人签名、不替代权利人许可或法律判断；有权限同时伪造清单和全部收据的人不在其可信边界内。新增来源或真实批准必须经代码审查，不可从公网元数据自动晋级。
+- CI 在现有原生 amd64/arm64 合成 job 执行离线夹具与真实 manifest 的文本/tree 证据校验，不 fetch submodule；本地 `--check`/`--strict` 完整对象检查需要已经存在的固定 `vendor/arc`，缺失时失败而非下载。双架构镜像及既有检查不变。
+
+## 后续最小工作包
+
+没有组件已满足迁入条件，不能迁入任何上游组件。先取得可访问的 Essential/Evo 完整对应源码（含 defconfig/external tree/patch/toolchain）、LKM/Custom 对应源码，以及 AuxXxilium/相应贡献者对 GPLv3、MIT 文件头、非商业文字范围的可审查确认。获取缺失证据是下一独立工作包，不是继续等待上游的理由；不可用就保留阻断。
+
+之后的最小候选是**不含 serials、绕过功能、外部动态 data 的平台配置逐文件 allowlist**，仍须来源/许可/依赖和权利审查齐全后另行准入；该候选现在不获准。core Shell 只有逐文件排除禁迁入功能、所有 blobs 和上游下载器，并完成许可/依赖审查后才可作为另一独立候选。真实重建器与迁移必须另开经授权工作包，不执行 `img-gen.sh` 或 Taskfile。
+
+取证方法、重点组件发现、验证与未覆盖项见[本次记录](archive/reviews/2026-10-23-bootloader-component-admission.md)。RISK-006 保持开放，生产启动路径不变。

@@ -1,0 +1,2286 @@
+{
+  "schema_version": 1,
+  "source_lock": "research/bootloader/source-lock.json",
+  "observations": "research/bootloader/evidence/github-observations-2026-10-23.json",
+  "baseline_mapping": {
+    "core": "引导器本体",
+    "buildroot-essential": "Buildroot Essential",
+    "buildroot-evo": "Buildroot Evo",
+    "grub": "GRUB",
+    "grub-seed": "grub.img.gz",
+    "genarc": "genArc",
+    "sshx": "sshx",
+    "kpatch": "kpatch",
+    "memtest": "memtest",
+    "lkm": "LKM",
+    "custom": "Custom",
+    "modules": "Modules",
+    "addons": "Addons",
+    "configs": "Configs",
+    "patches": "Patches",
+    "theme": "Theme"
+  },
+  "components": [
+    {
+      "id": "core",
+      "name": "引导器核心 Shell 与配置",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "files/initrd/opt/arc",
+          "files/initrd/var/www",
+          "Taskfile.yaml"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "partial",
+        "evidence": [
+          "core_shell",
+          "taskfile",
+          "download_recipe"
+        ],
+        "notes": "Shell/config 可读，但混有二进制、内核模板、Web 依赖与禁迁入功能；并非可直接导入的纯源码范围。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE",
+          "MIT file headers refer to /LICENSE",
+          "README prohibits commercial use"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "根许可、文件头与 README 非商业声明范围未澄清",
+          "逐文件 allowlist/禁迁入功能排除与依赖闭包未完成"
+        ]
+      },
+      "artifacts": [],
+      "build": {
+        "entrypoints": [
+          "img-gen.sh",
+          "Taskfile.yaml",
+          "scripts/functions.sh"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "upstream release APIs/latest",
+          "Buildroot Essential/Evo",
+          "GRUB seed and prebuilt tools"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "grub_recipe": {
+          "kind": "locked",
+          "path": "scripts/grub.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/grub.sh"
+        },
+        "core_shell": {
+          "kind": "git",
+          "path": "files/initrd/opt/arc/arc.sh",
+          "sha256": "3119d31cdc7cb5d351d02c4f4bbdc29f20516eeead339b4d5680947a37e440f0",
+          "bytes": 18503,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/opt/arc/arc.sh"
+        },
+        "taskfile": {
+          "kind": "git",
+          "path": "Taskfile.yaml",
+          "sha256": "687365722195e13216612c0012e00f182d3df49b8bfb8ca6d136805cd4326fbf",
+          "bytes": 220,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/Taskfile.yaml"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "conflict",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "REVIEW_REQUIRED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "根许可、文件头与 README 非商业声明范围未澄清",
+        "逐文件 allowlist/禁迁入功能排除与依赖闭包未完成"
+      ],
+      "next_actions": [
+        "请求 AuxXxilium 及相应贡献者澄清适用范围与再许可权",
+        "制定不含 genArc/授权绕过/服务解锁及 blobs 的逐文件源码 allowlist"
+      ]
+    },
+    {
+      "id": "buildroot-essential",
+      "name": "Buildroot Essential",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-buildroot-essential",
+        "paths": [
+          "/"
+        ],
+        "identity": "unresolved"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "固定主锁下载器引用此仓库；认证 API 的仓库/tags/releases 与公开 API/HTML 均 404，owner 搜索无匹配；私有、删除、迁移及调用者权限仍无法区分，不认定仓库不存在。"
+      },
+      "license": {
+        "declarations": [
+          "Buildroot/Linux/package-specific license scope unverified"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [],
+        "unresolved": [
+          "未取得实际完整源码、defconfig、external tree、kernel/initrd 配置和补丁",
+          "无确定工具链及对应 release 资产身份/源码关联"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-buildroot-essential/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          "scripts/functions.sh:getBuildroot"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "arc-buildroot-essential release selection is floating"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "unavailable/arc-buildroot-essential"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "未取得实际完整源码、defconfig、external tree、kernel/initrd 配置和补丁",
+        "无确定工具链及对应 release 资产身份/源码关联"
+      ],
+      "next_actions": [
+        "向上游请求可访问仓库或对应源码归档、完整 commit/tree、defconfig/external tree/patches 与工具链锁",
+        "获取精确 release 资产身份和 SHA256，并建立源码到 kernel/initrd 的关联"
+      ]
+    },
+    {
+      "id": "buildroot-evo",
+      "name": "Buildroot Evo",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-buildroot-evo",
+        "paths": [
+          "/"
+        ],
+        "identity": "unresolved"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "与 Essential 独立核验，公开/认证多端点均不可访问；没有可证实的改名迁移或完整源码交付。"
+      },
+      "license": {
+        "declarations": [
+          "Buildroot/Linux/package-specific license scope unverified"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [],
+        "unresolved": [
+          "Evo 独立源码/配置/补丁/工具链闭包不可得",
+          "release 与源码对应关系未知"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-buildroot-evo/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          "scripts/functions.sh:getBuildroot"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "arc-buildroot-evo release selection is floating"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "unavailable/arc-buildroot-evo"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "Evo 独立源码/配置/补丁/工具链闭包不可得",
+        "release 与源码对应关系未知"
+      ],
+      "next_actions": [
+        "单独请求 Evo 对应源码、构建说明、defconfig/external tree 与工具链版本",
+        "确认是否迁移/私有及可合法访问方式，不以 Essential 推代 Evo"
+      ]
+    },
+    {
+      "id": "grub",
+      "name": "GRUB 与启动介质生成链",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "scripts/grub.sh",
+          "img-gen.sh"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "partial",
+        "evidence": [
+          "grub_recipe"
+        ],
+        "notes": "固定配方默认 grub-2.14，自 GNU FTP tar.gz 获取且 curl -k 无摘要；i386-pc/i386-efi/x86_64-efi，改写 extra_deps.lst 并裁剪 locale/theme；没有认证的 tarball/工具链/seed 构建收据。版本是配方声明，不是已验证产物版本。"
+      },
+      "license": {
+        "declarations": [
+          "GRUB upstream GPL scope must be verified for exact source",
+          "recipe has MIT header referring to root GPLv3"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "GRUB 原始 tarball/补丁链/宿主依赖和字体未锁定",
+          "配方不能证明现有 grub.img.gz 来源；危险磁盘生成流程未执行"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "files/p1/EFI/BOOT/SynoBootLoader.efi",
+          "kind": "placeholder",
+          "evidence": "blob0",
+          "source_relation": "zero-byte EFI placeholder, not usable loader evidence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          "scripts/grub.sh",
+          "img-gen.sh"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "https://ftp.gnu.org/gnu/grub/${GRUB}.tar.gz",
+          "gcc/binutils/configure/make (unlocked)",
+          "fdisk/losetup/mkdosfs/mkfs.ext2/mkfs.ext4/gzip and host unicode.pf2"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "grub_recipe": {
+          "kind": "locked",
+          "path": "scripts/grub.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/grub.sh"
+        },
+        "blob0": {
+          "kind": "git",
+          "path": "files/p1/EFI/BOOT/SynoBootLoader.efi",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/p1/EFI/BOOT/SynoBootLoader.efi"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "GRUB 原始 tarball/补丁链/宿主依赖和字体未锁定",
+        "配方不能证明现有 grub.img.gz 来源；危险磁盘生成流程未执行"
+      ],
+      "next_actions": [
+        "取得 GNU 原始源码及认证摘要，固定编译器/binutils 与全部 patch/config",
+        "改写隔离、资源有归属的介质生成器，再验证 BIOS/EFI 与 seed 对应关系"
+      ]
+    },
+    {
+      "id": "grub-seed",
+      "name": "预编译 GRUB disk seed",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "files/initrd/opt/arc/grub.img.gz"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "download_recipe"
+        ],
+        "notes": "仅固定压缩 disk seed bytes；没有内部文件系统组成、逐项源码及生成收据。"
+      },
+      "license": {
+        "declarations": [
+          "Undetermined bundled GRUB/filesystem/font licenses"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "disk seed 完整源码/组成清单/工具链及生成记录缺失"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "files/initrd/opt/arc/grub.img.gz",
+          "kind": "pinned_blob",
+          "evidence": "blob0",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          "scripts/grub.sh",
+          "img-gen.sh"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "grub",
+          "host filesystem/disk tools"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "grub_recipe": {
+          "kind": "locked",
+          "path": "scripts/grub.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/grub.sh"
+        },
+        "blob0": {
+          "kind": "git",
+          "path": "files/initrd/opt/arc/grub.img.gz",
+          "sha256": "4c2dddf13aa3f35cc480c03834b540dbe5a944469c4962b938e3cd136998cb8f",
+          "bytes": 12065296,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/opt/arc/grub.img.gz"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "disk seed 完整源码/组成清单/工具链及生成记录缺失"
+      ],
+      "next_actions": [
+        "请求原 seed 构建记录和完整对应源码；以后由审查后的隔离生成器重建"
+      ]
+    },
+    {
+      "id": "genarc",
+      "name": "genArc 预编译程序",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "files/initrd/usr/bin/genArc"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "download_recipe"
+        ],
+        "notes": "仅固定 ELF；没有认证独立上游、版本或对应源码；其序列号/授权相关功能排除迁入。"
+      },
+      "license": {
+        "declarations": [
+          "Unknown binary license; root license is insufficient"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "无对应源码/许可/工具链",
+          "ADR 0009 禁迁入功能需排除"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "files/initrd/usr/bin/genArc",
+          "kind": "pinned_blob",
+          "evidence": "blob0",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        }
+      ],
+      "build": {
+        "entrypoints": [],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "unknown compiled implementation"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "blob0": {
+          "kind": "git",
+          "path": "files/initrd/usr/bin/genArc",
+          "sha256": "0ff595b2655365631319672542bb5e1fada4e1b4826258e527c8f2e7a90dea8d",
+          "bytes": 2355384,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/usr/bin/genArc"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "excluded",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "无对应源码/许可/工具链",
+        "ADR 0009 禁迁入功能需排除"
+      ],
+      "next_actions": [
+        "从迁入 allowlist 排除该程序及其调用；若审计留档则请求源码与权利主体说明"
+      ]
+    },
+    {
+      "id": "sshx",
+      "name": "sshx 预编译程序",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "files/initrd/usr/bin/sshx"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "download_recipe"
+        ],
+        "notes": "仅固定 ELF。名称不足以认证任何同名开源项目或版本；未从字符串猜测来源。"
+      },
+      "license": {
+        "declarations": [
+          "Unknown binary license; name does not establish ownership"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "准确上游/源码 commit/修改/工具链未认证",
+          "再分发权与产物关联未认证"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "files/initrd/usr/bin/sshx",
+          "kind": "pinned_blob",
+          "evidence": "blob0",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        }
+      ],
+      "build": {
+        "entrypoints": [],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "unknown remote service/build dependencies"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "blob0": {
+          "kind": "git",
+          "path": "files/initrd/usr/bin/sshx",
+          "sha256": "18e167a63ec08d34574f9d969b31c13daadf9fbefd18dc21844f2d9430704315",
+          "bytes": 7263008,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/usr/bin/sshx"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "准确上游/源码 commit/修改/工具链未认证",
+        "再分发权与产物关联未认证"
+      ],
+      "next_actions": [
+        "请求供应方给出准确项目/commit、许可证、依赖锁和构建命令，再验证产物关联"
+      ]
+    },
+    {
+      "id": "kpatch",
+      "name": "kpatch 预编译程序",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "files/initrd/opt/arc/kpatch",
+          "files/initrd/opt/arc/bzImage-template-v4.gz",
+          "files/initrd/opt/arc/bzImage-template-v5.gz"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "download_recipe"
+        ],
+        "notes": "仅固定 ELF 与两份压缩 kernel 模板；名称不证明属于任何同名 livepatch 项目。"
+      },
+      "license": {
+        "declarations": [
+          "Unknown program/template license and corresponding-source scope"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "程序与 kernel 模板来源/修改/对应源码未认证",
+          "功能与 DSM 权利边界须单独评审"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "files/initrd/opt/arc/kpatch",
+          "kind": "pinned_blob",
+          "evidence": "blob0",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        },
+        {
+          "path": "files/initrd/opt/arc/bzImage-template-v4.gz",
+          "kind": "pinned_blob",
+          "evidence": "blob1",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        },
+        {
+          "path": "files/initrd/opt/arc/bzImage-template-v5.gz",
+          "kind": "pinned_blob",
+          "evidence": "blob2",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        }
+      ],
+      "build": {
+        "entrypoints": [],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "kernel templates",
+          "unknown compiler/kernel input"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "blob0": {
+          "kind": "git",
+          "path": "files/initrd/opt/arc/kpatch",
+          "sha256": "f96b051cd72094a96e0ccb2c3e38c1d9a011f7560f22406c520c4bd9f6459211",
+          "bytes": 146136,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/opt/arc/kpatch"
+        },
+        "blob1": {
+          "kind": "git",
+          "path": "files/initrd/opt/arc/bzImage-template-v4.gz",
+          "sha256": "cdb88c1f92ab95dd5338eef491a930c853bd22d97e0d17663717e7f3bbd1c473",
+          "bytes": 30305,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/opt/arc/bzImage-template-v4.gz"
+        },
+        "blob2": {
+          "kind": "git",
+          "path": "files/initrd/opt/arc/bzImage-template-v5.gz",
+          "sha256": "5815fabd5b04d1980db4e1d0e4b7b5daf3d8be0c90c9e8cf1074f9103fa135ab",
+          "bytes": 54454,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/initrd/opt/arc/bzImage-template-v5.gz"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "程序与 kernel 模板来源/修改/对应源码未认证",
+        "功能与 DSM 权利边界须单独评审"
+      ],
+      "next_actions": [
+        "请求程序及模板完整对应源码与构建材料；排除绕过功能"
+      ]
+    },
+    {
+      "id": "memtest",
+      "name": "memtest 预编译程序",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc",
+        "paths": [
+          "files/p1/boot/grub/memtest"
+        ],
+        "identity": "source-lock"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "download_recipe"
+        ],
+        "notes": "仅固定原始 bytes；不能从文件名判定为 memtest86/memtest86+ 或任何版本。"
+      },
+      "license": {
+        "declarations": [
+          "Unknown memtest implementation/license"
+        ],
+        "copyright": [
+          "Rights holders unverified; AuxXxilium is an observed distributor/reference, not proof of authorship or authority to relicense"
+        ],
+        "evidence": [
+          "root_license",
+          "readme"
+        ],
+        "unresolved": [
+          "实现身份、源码版本、许可证与构建工具链缺失"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "files/p1/boot/grub/memtest",
+          "kind": "pinned_blob",
+          "evidence": "blob0",
+          "source_relation": "corresponding complete source and rebuild record NOT established"
+        }
+      ],
+      "build": {
+        "entrypoints": [],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "unknown freestanding toolchain"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "root_license": {
+          "kind": "locked",
+          "path": "LICENSE",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/LICENSE"
+        },
+        "readme": {
+          "kind": "locked",
+          "path": "README.md",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/README.md"
+        },
+        "blob0": {
+          "kind": "git",
+          "path": "files/p1/boot/grub/memtest",
+          "sha256": "9710cc8b7bf4b2b6e7bff5656784d719e141127293f7b2ee36df90c48baa7a2c",
+          "bytes": 148992,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/files/p1/boot/grub/memtest"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "实现身份、源码版本、许可证与构建工具链缺失"
+      ],
+      "next_actions": [
+        "请求精确实现身份、源码 tag/commit、许可及构建和产物关联"
+      ]
+    },
+    {
+      "id": "lkm",
+      "name": "LKM",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-lkm",
+        "paths": [
+          "README.md",
+          "LICENSE"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "完整远端 tree 4 条目、3 blobs，仅 FUNDING/LICENSE/README；README 明示只发布 LKM builds。release rp-lkms.zip 存在但未下载，没有实现源码。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE; binary scope unresolved"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "无 LKM 实现源码、patch、config、toolchain",
+          "release 二进制与 kernel ABI/源码对应未知"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-lkm/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "rp-lkms.zip floating release",
+          "DSM kernel ABI / SDK"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-lkm"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "无 LKM 实现源码、patch、config、toolchain",
+        "release 二进制与 kernel ABI/源码对应未知"
+      ],
+      "next_actions": [
+        "请求 LKM 完整对应源码及每种目标 ABI 的 config/patch/toolchain",
+        "逐模块核对许可、NOTICE 和原作者；禁迁入功能单独排除"
+      ]
+    },
+    {
+      "id": "custom",
+      "name": "Custom kernels",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-custom",
+        "paths": [
+          "README.md",
+          ".github/workflows/build.yml",
+          "LICENSE"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "完整远端 tree 6 条目、4 blobs，没有 kernel 源码/defconfig/patch；README 声称 DSM kernel 5.10.55，workflow 仅 zip *.tgz/*.gz。release 资产存在不等于源码交付。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 repository LICENSE; Linux/kernel/driver rights separately unverified"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "缺 kernel 完整对应源码、配置、patch 和工具链",
+          "README 版本声明不足以证明发布物 kernel ABI 或可重建"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-custom/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          ".github/workflows/build.yml:zip *.tgz *.gz"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "custom floating release",
+          "DSM 5.10.55 claim, not validated ABI"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-custom"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "缺 kernel 完整对应源码、配置、patch 和工具链",
+        "README 版本声明不足以证明发布物 kernel ABI 或可重建"
+      ],
+      "next_actions": [
+        "请求逐平台完整 kernel 源码、defconfig、所有 patch 和编译器/binutils",
+        "将精确 release 资产映射到对应源码/config/ABI，独立核查驱动与固件许可"
+      ]
+    },
+    {
+      "id": "modules",
+      "name": "Modules/firmware",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-modules",
+        "paths": [
+          "modules",
+          ".gitmodules",
+          ".github/workflows/compile.yml",
+          ".github/workflows/build.yml"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "unavailable",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "固定 tree 含 18028 个 .ko 和 firmware，没有 C/H 源码或 src/。compile workflow 引用 src/，当前快照缺失；.gitmodules、动态 pkgscripts-ng/SDK/linux-firmware 不能替代完整对应源码。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE",
+          "MIT workflow headers",
+          "module/kernel/firmware licenses need individual review"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "逐模块源码、kernel ABI/config/SDK 对应未闭合",
+          "firmware 来源和许可独立，外部 clone 未锁"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-modules/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          ".github/workflows/compile.yml",
+          ".github/workflows/syno.yml",
+          ".github/workflows/kvm.yml",
+          ".github/workflows/build.yml"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "SynologyOpenSource/pkgscripts-ng floating clone",
+          "linux-firmware floating clone",
+          "Synology SDK/kernel inputs",
+          "jim3ma/synology-igc.git via .gitmodules; src path absent, no delivered gitlink/source closure"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-modules"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "当前 tree 无实现源码，workflow 引用的 src/ 缺失；逐模块 kernel ABI/config/SDK 对应未闭合",
+        "firmware 来源和许可独立，外部 clone 未锁"
+      ],
+      "next_actions": [
+        "建立逐 .ko/firmware 子清单，映射源码/config/vermagic/SDK/compiler 与许可证",
+        "固定全部外部输入和 release 摘要；只对闭包完整的单模块另行申请准入"
+      ]
+    },
+    {
+      "id": "addons",
+      "name": "Addons",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-addons",
+        "paths": [
+          "compile-addons.sh",
+          ".github/workflows/build.yml",
+          ".github/workflows/eudev_build.yml"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "partial",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "脚本与源码片段和预编译 tgz、共享库、工具混合；eudev workflow 用 syno-compiler 版本 tag，无镜像 digest。未取得逐 addon 闭包。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE; bundled tools separate"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "每个 addon/嵌入程序的源码与许可未逐项闭合",
+          "工具镜像、SDK、输入和 release 关联未锁"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-addons/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          "compile-addons.sh",
+          ".github/workflows/eudev_build.yml"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "auxxxilium/syno-compiler:${version} (no digest)",
+          "SDK and per-addon inputs"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-addons"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "BLOCKED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "每个 addon/嵌入程序的源码与许可未逐项闭合",
+        "工具镜像、SDK、输入和 release 关联未锁"
+      ],
+      "next_actions": [
+        "拆分 addon 子清单及嵌入 ELF/库，核对对应源码/许可",
+        "固定 compiler image digest、SDK 与依赖，排除服务解锁功能"
+      ]
+    },
+    {
+      "id": "configs",
+      "name": "Configs",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-configs",
+        "paths": [
+          "platforms-essential.yml",
+          "platforms.yml",
+          ".github/workflows/build.yml"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "partial",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "配置文本可读；workflow 从 arc-dsm/new 动态取 data.yml，包含 serials.yml 须明确排除，未取得独立完整闭包。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE; model/data rights unresolved"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "外部 arc-dsm/new/data.yml 浮动",
+          "serials 数据及功能排除未完成，配置权利待审"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-configs/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          ".github/workflows/build.yml"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "https://raw.githubusercontent.com/AuxXxilium/arc-dsm/refs/heads/new/data.yml"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-configs"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "REVIEW_REQUIRED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "外部 arc-dsm/new/data.yml 浮动",
+        "serials 数据及功能排除未完成，配置权利待审"
+      ],
+      "next_actions": [
+        "只审查不含 serials 的平台配置 allowlist，锁定合法必要 data 来源",
+        "取得配置/模型数据权利范围确认与依赖闭包"
+      ]
+    },
+    {
+      "id": "patches",
+      "name": "Patches",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-patches",
+        "paths": [
+          ".github/workflows/build.yml",
+          "README.md",
+          "LICENSE"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "partial",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "tree 显示 11 .patch 与一个 shell，workflow 只打包；补丁目标 DSM 文件、功能及改作权需要逐项审查；未采集专有目标文件。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE; patch target rights separate"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "逐 patch 功能/适用目标/来源与权利未审",
+          "不可把 DSM 修改/服务解锁功能自动准入"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-patches/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          ".github/workflows/build.yml"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "DSM target versions/files not supplied"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-patches"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "REVIEW_REQUIRED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "逐 patch 功能/适用目标/来源与权利未审",
+        "不可把 DSM 修改/服务解锁功能自动准入"
+      ],
+      "next_actions": [
+        "建立逐补丁 allowlist 与原作者/适用目标证据，排除绕过/服务解锁",
+        "只对合法明确、可独立验证的补丁另行请求准入"
+      ]
+    },
+    {
+      "id": "theme",
+      "name": "Theme",
+      "origin": {
+        "repository": "https://github.com/AuxXxilium/arc-theme",
+        "paths": [
+          "mktheme.py",
+          "install.sh",
+          "theme",
+          ".github/workflows/build.yml"
+        ],
+        "identity": "observations"
+      },
+      "source": {
+        "availability": "partial",
+        "evidence": [
+          "inspection"
+        ],
+        "notes": "tree 包含生成脚本、PNG 和两份 PF2 字体；字体/原始图稿/商标权利及生成工具链未认证。"
+      },
+      "license": {
+        "declarations": [
+          "GPL version 3 root LICENSE",
+          "MIT workflow headers",
+          "font/artwork licenses unverified"
+        ],
+        "copyright": [
+          "AuxXxilium and cited contributors; component-specific rights holders unresolved"
+        ],
+        "evidence": [
+          "inspection"
+        ],
+        "unresolved": [
+          "字体/图稿许可和原始可编辑素材未闭合",
+          "PF2 与源字体/工具链对应未知"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "https://github.com/AuxXxilium/arc-theme/releases",
+          "kind": "unlocked_release",
+          "evidence": null,
+          "source_relation": "metadata observation only; bytes not downloaded, digest not verified; no source correspondence"
+        }
+      ],
+      "build": {
+        "entrypoints": [
+          "mktheme.py",
+          "install.sh",
+          ".github/workflows/build.yml"
+        ],
+        "toolchain": [
+          "unlocked/unverified; see dependencies and captured recipe"
+        ],
+        "dependencies": [
+          "source fonts",
+          "font conversion/image tools"
+        ],
+        "reproducibility": "not verified; no third-party build executed"
+      },
+      "evidence": {
+        "download_recipe": {
+          "kind": "locked",
+          "path": "scripts/functions.sh",
+          "sha256": null,
+          "bytes": null,
+          "locator": "https://github.com/AuxXxilium/arc/blob/99195dbdf4e0a21c5304ddb06e07dc57419679bc/scripts/functions.sh"
+        },
+        "inspection": {
+          "kind": "local",
+          "path": "research/bootloader/evidence/github-observations-2026-10-23.json",
+          "sha256": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+          "bytes": 519298,
+          "locator": "repositories/arc-theme"
+        }
+      },
+      "conditions": {
+        "source_complete": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "完整对应源码、范围与版本未验证；检查快照不是完整源码交付"
+        },
+        "license_scope": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "根 GPLv3、文件级声明与第三方范围未闭合"
+        },
+        "rights_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "尚无权利人范围确认或合格审查结论"
+        },
+        "scope_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "ADR 0009 禁迁入功能及逐文件范围尚未批准"
+        },
+        "toolchain_locked": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "编译器/SDK/构建环境与入口没有完整固定输入"
+        },
+        "dependencies_closed": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "动态 release/工具/目标输入未形成闭包"
+        },
+        "rebuild_verified": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "未执行第三方构建，无隔离重建验证收据"
+        },
+        "binary_correspondence": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "现有预编译产物与对应源码/配置/工具链关联未成立"
+        },
+        "distribution_review": {
+          "result": "missing",
+          "evidence": [],
+          "explanation": "组合分发权利与材料义务未确认；source-lock 保持分发禁止"
+        }
+      },
+      "admission": {
+        "status": "REVIEW_REQUIRED",
+        "source_import": false,
+        "combined_build": false,
+        "distribution": false
+      },
+      "blockers": [
+        "字体/图稿许可和原始可编辑素材未闭合",
+        "PF2 与源字体/工具链对应未知"
+      ],
+      "next_actions": [
+        "请求字体原文件和许可证、图稿权利和工具链版本",
+        "后续独立创建 DockDSM 自有图稿仍保留第三方归属，不用品牌替换隐去权利"
+      ]
+    }
+  ]
+}

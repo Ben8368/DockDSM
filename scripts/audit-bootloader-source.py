@@ -17,11 +17,14 @@ def git(source: Path, *args: str) -> bytes:
     """Run a fixed read-only Git command against the explicitly selected repository."""
     env = {key: value for key, value in os.environ.items()
            if not key.startswith('GIT_')}
+    env['GIT_CONFIG_NOSYSTEM'] = '1'
+    env['GIT_CONFIG_GLOBAL'] = os.devnull
+    env['GIT_OPTIONAL_LOCKS'] = '0'
     env['GIT_NO_REPLACE_OBJECTS'] = '1'
     env['GIT_NO_LAZY_FETCH'] = '1'
     # Also block transports on Git versions that lack GIT_NO_LAZY_FETCH.
     env['GIT_ALLOW_PROTOCOL'] = ''
-    return subprocess.check_output(['git', '-C', str(source), *args],
+    return subprocess.check_output(['git', '--no-pager', '-c', 'core.fsmonitor=false', '-C', str(source), *args],
                                    env=env, stderr=subprocess.PIPE)
 
 
