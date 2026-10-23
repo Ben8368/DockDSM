@@ -67,6 +67,8 @@ python3 scripts/governance-docs-check.py
 python3 tests/governance-docs.py
 python3 tests/branding.py
 python3 tests/ci-policy.py
+python3 tests/arc-overlay.py
+python3 tests/bootloader-source-audit.py
 python3 scripts/check-tree.py
 python3 scripts/check-config.py
 python3 scripts/git-hooks-test.py

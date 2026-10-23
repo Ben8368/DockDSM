@@ -4,6 +4,9 @@
 `DSM_PLATFORM=rtd1619b` selects experimental DS124 DSM 7.2.2-72806 support.
 It describes the validated DS124 hardware contract, not every rtd1619b NAS.
 A container's image architecture does not select the DSM model.
+Planned DockDSM Bootloader selectors `full-x86_64` / `full-arm64` are not
+implemented or accepted values; ARM64 direct boot is not a loader port.
+Host, container, QEMU guest, DSM model and bootloader architectures remain distinct.
 
 This document defines implemented behavior. Proposed Profile/Boot Provider/Runtime
 interfaces are in [runtime architecture](runtime-architecture.md); device validation

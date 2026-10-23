@@ -11,7 +11,7 @@ DockDSM 是独立维护的 DSM 虚拟化容器方案。Docker 管理 QEMU 进程
 
 **目标架构：控制层 → 平台配置与可选启动提供者 → 容器化 QEMU → DSM。**
 
-我们采用性能基线起步、逐步重构运行架构的路线：保留 Virtual DSM 与 ARM64 direct boot，ARC 作为后续独立启动提供者接入。ARC 与 DSM 是同一台 VM 内的不同启动阶段。设计决定见 [ADR 0006](docs/ADR/0006-runtime-profiles-and-container-first.md)。
+我们按源码准入 → 自主源码维护 → DockDSM Bootloader 品牌和接口 → x86 → ARM64 的顺序推进，保留 Virtual DSM 与 ARM64 direct boot。目标是由 DockDSM Bootloader 在同一台 QEMU VM 内向 DSM 交接，不创建嵌套虚拟机；Arc 仅作为上游源码来源记录。设计决定见 [ADR 0009](docs/ADR/0009-owned-bootloader-source.md)。
 
 > **当前还没有集成 ARC。** 现有代码可运行 Virtual DSM x86，并提供实验性的 DS124 ARM64 direct-boot 路径。ARM64 容器镜像、ARM64 DSM 与 ARM64 ARC 是三件不同的事；不能把已有 ARM64 路径当作 ARC 移植已经完成。
 
@@ -21,8 +21,8 @@ DockDSM 是独立维护的 DSM 虚拟化容器方案。Docker 管理 QEMU 进程
 | --- | --- | --- |
 | `DSM_PLATFORM=virtualdsm` | 默认 x86 Virtual DSM 启动路径 | ARM64 宿主运行 x86 guest 使用 TCG；KVM 需同架构及可用设备 |
 | `DSM_PLATFORM=rtd1619b` | 实验性 DS124 ARM64 直接 kernel/initrd 启动 | 仅 DSM 7.2.2-72806 与精确官方 PAT；单盘 Basic/Btrfs 有证据 |
-| ARC x86-64 | 计划中的隔离 PoC | 尚未合入；不能用于现有数据盘 |
-| ARC ARM64 | 后续 loader 可行性研究 | 尚未实现，不在当前支持范围 |
+| DockDSM Bootloader x86-64 | 计划中的隔离 PoC | 仅固定第三方研究源码入口；不能用于现有数据盘 |
+| DockDSM Bootloader ARM64 | x86 验收后的 loader 研究 | 尚未实现，已有 DS124 direct boot 不代表移植成功 |
 
 现有 ARM64 KVM 证据来自 Apple M5 / Colima Apple VZ / ARM64 Linux 的嵌套 KVM 环境，不代表裸机 ARM64 或所有 ARM 主机。Surveillance Station 的实际摄像头、许可、录像/回放验收仍未完成。
 
@@ -59,9 +59,9 @@ docker compose -f compose.local.yml logs -f
 
 ## 工程路线与文档
 
-1. 固定依赖并建立 x86、MacBook Air M5、RK3588 性能与兼容基线；RK3588 仅用 Docker 容器验证，Mac 对比容器后端后选型。
-2. 先做加速、日志、网络和 I/O 单变量实验，再逐步分离平台配置、运行后端、生命周期与存储状态。
-3. 通过旧路径兼容与恢复门禁后接入隔离的 ARC x86 PoC；Host QEMU 与 ARM64 loader 独立评估，不作为现有平台的前置依赖。
+1. 固定并审计引导器源码、许可证与构建闭包，准入后纳入自主维护的源码树。
+2. 统一 DockDSM 品牌和 Boot Provider 接口，保留旧平台与数据契约，构建并验收同一 QEMU VM 内的 x86 引导链。
+3. x86 验收后推进 ARM64 Bootloader；设备、性能和恢复证据独立取证，RK3588 仅用 Docker，Mac 比较容器后端。
 
 | 主题 | 文档 |
 | --- | --- |
@@ -78,6 +78,6 @@ docker compose -f compose.local.yml logs -f
 
 感谢 [vdsm/virtual-dsm](https://github.com/vdsm/virtual-dsm) 提供 Docker/QEMU Virtual DSM 代码基础，感谢 [AuxXxilium/arc](https://github.com/AuxXxilium/arc) 提供引导器架构与实现参考。
 
-DockDSM 自行维护产品方向与发布，不自动同步上述项目，也不代表任何项目或 Synology 官方背书。**独立维护不抹去代码来源**：继承的 MIT 条款、原作者与贡献者归属保留于 [license.md](license.md)、[NOTICE](NOTICE) 和 [PROVENANCE](docs/PROVENANCE.md)。ARC 当前仅为参考，未来引入其代码或产物前须逐组件审查许可与分发条件。
+DockDSM 自行维护产品方向与发布，不自动同步上述项目，也不代表任何项目或 Synology 官方背书。**独立维护不抹去代码来源**：继承的 MIT 条款、原作者与贡献者归属保留于 [license.md](license.md)、[NOTICE](NOTICE) 和 [PROVENANCE](docs/PROVENANCE.md)。第三方 ARC 已固定为隔离研究 submodule，未加入生产镜像；自主源码迁移及组合分发须先通过[组件准入](docs/bootloader-source-audit.md)。
 
 DSM、PAT、商标和其他第三方组件由相应权利人所有，不受 DockDSM 的 MIT 声明重新许可。使用前需自行确认 Synology EULA、目标硬件与相关使用条件；仓库不分发 DSM 专有镜像。

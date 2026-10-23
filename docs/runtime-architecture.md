@@ -1,6 +1,6 @@
 # DockDSM 运行架构设计
 
-设计中；以下类型、接口、目录与操作名均为后续实现契约，不是现有 CLI 或配置语法。范围与顺序见 [ADR 0006](ADR/0006-runtime-profiles-and-container-first.md)和[实施计划](implementation-plan.md)，现有公开接口仍以 [platforms](platforms.md) 为准。
+设计中；以下类型、接口、目录与操作名均为后续实现契约，不是现有 CLI 或配置语法。范围与顺序见 [ADR 0009](ADR/0009-owned-bootloader-source.md)和[实施计划](implementation-plan.md)，现有公开接口仍以 [platforms](platforms.md) 为准。
 
 ## 分层与数据流
 
@@ -8,7 +8,7 @@
 flowchart TB
   U["本地 CLI：校验 / 计划 / 启停 / 诊断"] --> C["Python 控制层：VMConfig + HostCapabilities"]
   C --> P["Profile：机型、架构、设备、证据范围"]
-  P --> B["Boot Provider：vDSM / direct kernel / ARC"]
+  P --> B["Boot Provider：vDSM / direct kernel / DockDSM Bootloader"]
   B --> L["LaunchPlan：argv、卷、端口、权限、产物身份"]
   L --> R["Runtime adapter：Docker；Mac OCI 候选；后续 Host QEMU"]
   R --> Q["QEMU + 显式 accelerator"]
@@ -18,7 +18,7 @@ flowchart TB
   O --> C
 ```
 
-同一 VM 的 loader 和 DSM 是不同启动阶段。Mac 的 Linux 容器外层 VM 是另一个环境层，不可与 loader 混同。Host/容器镜像/guest 三种架构单独声明；运行 amd64 用户空间翻译不等于加速 x86 DSM 内核。
+同一 VM 的 loader 和 DSM 是不同启动阶段。Mac 的 Linux 容器外层 VM 是另一个环境层，不可与 loader 混同。host、container、QEMU guest、DSM model、bootloader 五项架构单独声明；运行 amd64 用户空间翻译不等于加速 x86 DSM 内核。
 
 | 模块 | 负责 | 不负责 / 输入限制 |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ flowchart TB
 
 ## 类型和操作契约
 
-使用 versioned JSON Schema 描述文件边界，Python 类型承载内部结构；如接受 YAML，先转成同一校验模型并拒绝重复键。首批仅加载仓库内白名单 profile，不加载外部可执行插件。标识符沿用 `virtualdsm` / `rtd1619b`，未来 `arc-x86` 在实现前不是合法 `DSM_PLATFORM`。
+使用 versioned JSON Schema 描述文件边界，Python 类型承载内部结构；如接受 YAML，先转成同一校验模型并拒绝重复键。首批仅加载仓库内白名单 profile，不加载外部可执行插件。标识符沿用 `virtualdsm` / `rtd1619b`，新引导模式计划使用 `full-x86_64` / `full-arm64`，在实现前不是合法 `DSM_PLATFORM`。研究旧名只能经显式迁移适配，不自动重接旧盘。
 
 | 类型 | 必填字段与约束 |
 | --- | --- |
@@ -98,7 +98,7 @@ qcow2 overlay 仅作为后续一次性试验方案，必须记录 backing chain�
 1. 先实现 plan-only 与 legacy adapter 对照；通过实际镜像入口的 argv/错误路径测试，再切执行入口。
 2. 每次只改变一层；新增 profile 应只增加注册信息、profile/provider 和其测试，不修改其它 profile 的安装/数据盘逻辑。
 3. 第一阶段不删除 qemux 依赖；先固定基础镜像与脚本来源。后续逐项提取隐式行为，不能把本仓库没有的基础镜像脚本视为已经审查。
-4. runtime 按 guest 能力拆分是可选产物优化；每个产物的 amd64/arm64 是宿主二进制架构，不等于 guest DSM 架构。跨架构 TCG 产物若删减，必须显式收缩支持矩阵。
+4. 目标为统一 DockDSM 产品镜像，按需分 bootloader build、runtime build、final runtime stage，并通过 profile 选择 guest 启动链；镜像 amd64/arm64 是容器二进制架构，不等于 DSM/引导器架构。任何产物删减都须显式收缩矩阵，源码与发布准入见[接管审计](bootloader-source-audit.md)。
 5. Apple container adapter 必须核验 OCI image、PID1/signal、持久卷、端口、退出码和日志等语义，不能复用 Docker API/Compose 假设。Mac 选型可以先手动验证相同 OCI 镜像，再决定是否开发适配器。
 
 ## 契约验证

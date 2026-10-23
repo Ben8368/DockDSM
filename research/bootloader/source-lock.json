@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "repository": "https://github.com/AuxXxilium/arc.git",
+    "revision": "99195dbdf4e0a21c5304ddb06e07dc57419679bc",
+    "tree": "fd34c2ca01dc6f97a81dbd462d421396e3606928"
+  },
+  "snapshot": {
+    "entries": 76,
+    "blob_bytes": 22988687
+  },
+  "evidence": {
+    "LICENSE": {
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "bytes": 35149
+    },
+    "README.md": {
+      "sha256": "ae4bdce5e170a977e40772b29f9704fd0cdf462c31026a13e571ca5babe06640",
+      "bytes": 6650
+    },
+    "img-gen.sh": {
+      "sha256": "572c7d9671f73a821629f85a9760f1947360522bccac53c29e47929318667cb6",
+      "bytes": 1854
+    },
+    "scripts/functions.sh": {
+      "sha256": "9004ab05dfe828e1b0aed90f4469871cae8906d0b33612ce619d5b388b2ef974",
+      "bytes": 17545
+    },
+    ".github/workflows/build.yml": {
+      "sha256": "27e549a5ea13424f37f043025206506e6ae7c9386887e0d5867abf570c53868f",
+      "bytes": 12176
+    },
+    "scripts/grub.sh": {
+      "sha256": "1b87059dadb02944f6741309633ca3d212ce0c868f7ddbdd0a5097688ea61a62",
+      "bytes": 3168
+    }
+  },
+  "distribution": {
+    "combined_artifact_allowed": false,
+    "reason": "RISK-006: component license scope, complete source and binary provenance unresolved"
+  },
+  "unlocked_dependencies": [
+    "arc-buildroot-essential",
+    "arc-buildroot-evo",
+    "arc-addons",
+    "arc-modules",
+    "arc-configs",
+    "arc-patches",
+    "arc-custom",
+    "arc-lkm",
+    "arc-theme",
+    "GRUB source/toolchain",
+    "prebuilt grub.img.gz, genArc, sshx, kpatch and memtest"
+  ]
+}

@@ -69,6 +69,7 @@ jobs:
         run: |
           python3 tests/ci-policy.py
           python3 tests/arc-overlay.py
+          python3 tests/bootloader-source-audit.py
           python3 tests/bot-dispatch.py
       - name: Commit attribution hooks
         run: python3 scripts/git-hooks-test.py
