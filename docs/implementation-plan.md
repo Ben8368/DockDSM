@@ -58,7 +58,7 @@ G1–G4 的三设备闭环是本路线首个工程完成目标；Mac 的最终�
 | ID / 优先级 | 工作与具体交付 | 依赖 | 验收 / 责任域 |
 | --- | --- | --- | --- |
 | W00 / P0 | 三设备登记：OS、CPU、RAM、磁盘、网卡、容器引擎、权限、固件/内核可见信息 | 无 | 矩阵每个必填项有值或明确未知；Product / Platforms |
-| W01 / P0 | 锁定基础镜像 digest、qemu-host、patology commit/hash、QEMU source/patch、Python 依赖；形成更新流程 | 无 | 同一锁定输入可重建；原生 amd64/arm64 CI；CI / Release |
+| W01 / P0 | 锁定基础镜像 digest、qemu-host、patology commit/hash、QEMU source/patch、Python 依赖；形成更新流程 | 无 | 输入清单见[依赖固定](dependency-locks.md)；仓库身份可验证，系统包与构建子项目保留未验证边界；原生 amd64/arm64 CI；CI / Release |
 | W10 / P0 | 执行 X1/M1/R1 预检、现有两 profile 基线和跨架构诊断；保存完整环境 manifest | W00、W01 | [性能协议](performance-baseline.md)字段与重复次数齐全；Platforms / Quality |
 | W11 / P0 | 定义并采集 QEMU started、HTTP、configured、volume healthy 的独立时间点 | W10 | 不把 Docker healthy 当作 DSM ready；ARM runtime |
 | W12 / P0 | Mac M1/M2/M3/M4 容器候选资格筛选、A/B、恢复验证，写选择报告 | W00、W01 | 与 M1 同一 guest/PAT/QEMU；容器化优先，结果可复现；Platforms |

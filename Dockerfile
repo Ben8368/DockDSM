@@ -1,9 +1,9 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
-FROM qemux/qemu:7.50 AS base
+FROM qemux/qemu:7.50@sha256:e7f6fda52503a546fd649670ba46e4bc23dc6dcef275bc3fac48877fbbc430df AS base
 
 # BuildKit uses TARGETPLATFORM for every stage, independently of guest CPU.
-FROM debian:trixie-slim AS arm-qemu-build
+FROM debian:trixie-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad AS arm-qemu-build
 ARG TARGETARCH
 ARG QEMU_VERSION="8.2.2"
 RUN apt-get update && apt-get --no-install-recommends -y install \
@@ -46,7 +46,7 @@ RUN <<EOF
   apt-get clean
 
   # Install Python dependencies
-  pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore -r /tmp/requirements.txt
+  pip3 install --no-cache-dir --break-system-packages --root-user-action=ignore --require-hashes -r /tmp/requirements.txt
 
   qemu-system-aarch64 --version
   qemu-system-x86_64 --version
@@ -62,8 +62,8 @@ COPY --chmod=755 ./src /run/
 COPY --chmod=755 ./scripts/package-readiness.py /run/package-readiness.py
 COPY --chmod=755 ./web /var/www/
 COPY --chmod=744 ./web/conf/nginx.conf /etc/nginx/default.conf
-COPY --chmod=755 --from=qemux/qemu-host:2.06 /qemu-host.bin /run/host.bin
-ADD --chmod=775 https://raw.githubusercontent.com/sud0woodo/patology/refs/heads/main/patology.py /run/extract.py
+COPY --chmod=755 --from=qemux/qemu-host:2.06@sha256:5cd89a126bd4fb59cab33de7a1636871564e5006ecf51931c211ecb9f3012b32 /qemu-host.bin /run/host.bin
+ADD --chmod=775 --checksum=sha256:add398aa4058dd4b6e1dbe36ed89a5b259074cb702d77b460023e98ce143a3a6 https://raw.githubusercontent.com/sud0woodo/patology/18737e0924725375a857f10a54a4b5229beec3b2/patology.py /run/extract.py
 
 VOLUME /storage
 EXPOSE 445 5000

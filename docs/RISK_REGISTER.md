@@ -59,6 +59,13 @@
 - **当前策略：** 按[自动化约定](bot-automation.md)限制仓库、低风险和两轮上限；Issue 仅接受维护者授权且不执行外部输入；单写入者、最终 diff 审阅、CI 与人工合并。需要额外计费时停止并交维护者处理。
 - **关闭证据：** 真实低风险 Issue → Actions → Jules PR、原生规则修复与停止/交接均保留审计记录，确认 CI 不被削弱、费用边界及高风险不自动执行。
 
+### RISK-009（P1）：APT 与镜像上游重建信息未完整锁定
+
+- **阻断 Gate：** 声称完整 bit-for-bit 镜像可重复；不阻断固定 OCI/Python/QEMU 源码身份下的静态审查。
+- **问题：** Docker 基础镜像、BuildKit frontend、qemu-host、patology、Python 包、QEMU 源码及其 Meson 子项目 commit 已固定。但 `apt-get update` 仍从滚动 Trixie 仓库解析 build/runtime packages；目前仅记录了 amd64 本次直接依赖版本。qemux 基础镜像的上游 Dockerfile/source provenance 也未独立审计。
+- **当前策略：** 依赖身份、SHA256、当前 amd64 APT 解析版本见[依赖清单](dependency-locks.md)。不猜测 snapshot 日期或包版本；维持现有双架构构建和生产 QEMU 补丁流程。
+- **关闭证据：** 为 amd64/arm64 确认 Debian snapshot 和完整安装闭包，记录包来源身份，并核实 qemux 基础镜像上游构建来源；原生两架构构建与镜像回归通过。
+
 ## 已关闭风险
 
 - [RISK-001：Phase 3 严格 F5](archive/risks/2026-10.md#risk-001)。

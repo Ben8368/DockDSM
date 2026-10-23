@@ -28,10 +28,11 @@
 
 ## 最近验证
 
+- 2026-10-22：W01 锁定 Docker/工具/Python 输入；native amd64 镜像及 QEMU 无缓存构建、QEMU 补丁与镜像回归通过，Python 3.13 amd64/arm64 wheel 哈希解析通过。APT 仍未固定；native arm64、DSM 冷启动未运行，详见[依赖清单](docs/dependency-locks.md)与 [RISK-009](docs/RISK_REGISTER.md)。
 - 2026-10-22：x86 不完整安装保盘修复与启动健康检查分别经 PR #9、#8 合入，CI 和合成回归通过；未运行 DSM 冷启动或设备验收，见[修复与派单记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
-- 2026-10-22：README/部署文档与 CI 重写；本地静态、策略和合成回归通过，见 [验证记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。云端结果按当前 `master` SHA 的 [Actions](https://github.com/Ben8368/DockDSM/actions) 核验，不以旧 run 代替。
-- 2026-10-22：同步当时远端根提交（现由 `refs/tags/evidence/2bebdb2` 固定；该根提交已被 `2da1c3d` 取代，证据边界见 [PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)）；本轮文档验证与范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
-- 2026-10-22：机器人授权、Issue 派单、Dashboard、PR 的 CI 与本地配置/署名校验见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)；最终根提交云端结果按当前 SHA 核验。
+- 2026-10-22：CI/部署重写的本地与云端验证见[记录](docs/archive/reviews/2026-10-22-ci-redesign.md)。
+- 2026-10-22：重建根提交边界见[PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)；范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
+- 2026-10-22：自动化配置、署名校验及云端结果见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)。
 - 2026-10-22：核验 master 分支保护，并加固治理检查、ADR 语义与重建提交证据边界，见[治理加固记录](docs/archive/reviews/2026-10-22-governance-hardening.md)。
 
 - 2026-10-22：低风险 PR 规则 Active、现有两条 PR 不匹配；本地派单回归与未验收边界见[自动修复记录](docs/archive/reviews/2026-10-22-bot-autofix.md)。

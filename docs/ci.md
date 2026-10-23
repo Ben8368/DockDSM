@@ -86,7 +86,7 @@ git diff --check
 - 只有 publish/manifest job 有 `packages: write`；使用 `GITHUB_TOKEN`，不要求个人 PAT、Docker Hub 账户或邮件凭据。
 - 新仓库与旧 GHCR package 的授权不是同一件事；实际发布前需核对包关联、写权限与公开可拉取性。本轮只验证构建，不执行发布。
 
-构建仍依赖 Docker Hub frontend、qemux 基础镜像、Debian 仓库、固定 QEMU 源码以及 Dockerfile 中的 patology 工具来源。基础标签、包仓库和工具 pinning 的历史限制未因 CI 重写消失；见 [技术债](TECH_DEBT.md)。网络/源拉取失败须与编译、补丁或产品错误分开诊断。
+构建输入身份与尚未解决的包仓库 / configure-time 下载边界记录于[依赖清单](dependency-locks.md)和[技术债](TECH_DEBT.md)。网络/源拉取失败须与编译、补丁或产品错误分开诊断。
 
 ## Repository automation
 
