@@ -110,6 +110,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends e2fsprogs
           python -m pip install --require-hashes -r requirements.txt
+      - name: Offline bootloader component admission regression
+        run: python3 tests/bootloader-component-admission.py
       - name: Platform, acquisition and guest checks
         run: |
           bash tests/pat-acquisition.sh

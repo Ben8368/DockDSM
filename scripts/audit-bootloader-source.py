@@ -14,19 +14,31 @@ DEFAULT_LOCK = ROOT / 'research/bootloader/source-lock.json'
 
 
 def git(source: Path, *args: str) -> bytes:
-    """Run a fixed read-only Git command against the explicitly selected repository."""
+    """Read fixed Git objects from the explicitly selected local repository.
+
+    args must be trusted read-only subcommands supplied by this tool, not user
+    command fragments. Clear inherited Git routing/configuration and disable
+    transports, lazy fetch, fsmonitor and optional writes. Missing objects raise
+    CalledProcessError; the CLI sanitizes diagnostics rather than echoing stderr."""
     env = {key: value for key, value in os.environ.items()
            if not key.startswith('GIT_')}
+    env['GIT_CONFIG_NOSYSTEM'] = '1'
+    env['GIT_CONFIG_GLOBAL'] = os.devnull
+    env['GIT_OPTIONAL_LOCKS'] = '0'
     env['GIT_NO_REPLACE_OBJECTS'] = '1'
     env['GIT_NO_LAZY_FETCH'] = '1'
     # Also block transports on Git versions that lack GIT_NO_LAZY_FETCH.
     env['GIT_ALLOW_PROTOCOL'] = ''
-    return subprocess.check_output(['git', '-C', str(source), *args],
+    return subprocess.check_output(['git', '--no-pager', '-c', 'core.fsmonitor=false', '-C', str(source), *args],
                                    env=env, stderr=subprocess.PIPE)
 
 
 def inventory(source: Path, lock: dict) -> dict:
-    """Verify a source lock, then report object sizes and local history limits."""
+    """Verify lock identities, snapshot totals and evidence bytes against local Git objects.
+
+    Reject a different HEAD/tree, absent blobs or digest/size mismatches. Never
+    read working-tree replacements or fetch missing objects. History/storage
+    statistics describe only this clone, not complete upstream source delivery."""
     if lock['schema_version'] != 1:
         raise ValueError('unsupported source lock schema')
     revision, expected_tree = (lock['upstream'][key] for key in ('revision', 'tree'))
@@ -75,7 +87,7 @@ def inventory(source: Path, lock: dict) -> dict:
 
 
 def main() -> int:
-    """Print a JSON audit or fail closed on identity/evidence mismatches."""
+    """Print a verified inventory or return 1 with sanitized Git failure diagnostics."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True, help='local upstream Git checkout')
     parser.add_argument('--lock', type=Path, default=DEFAULT_LOCK)

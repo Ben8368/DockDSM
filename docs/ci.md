@@ -44,7 +44,7 @@ PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前�
 
 - **Docs governance**：文档预算/链接、品牌与来源、署名 hook、全树编码/空白、CI 策略回归。
 - **Lint**：Bash syntax、ShellCheck、Hadolint、JSON/YAML 重复键、校验下载的 Actionlint、整个根提交 whitespace。
-- **Synthetic regression tests**：原生 amd64、arm64 runner 上的 PAT 获取策略、包诊断、Surveillance 安装门禁、clock、image/installer/runtime 等；夹具不下载 DSM，installer 在可丢弃 runner 上使用 sudo 恢复属主与特殊文件。
+- **Synthetic regression tests**：原生 amd64、arm64 runner 上的 PAT 获取策略、包诊断、Surveillance 安装门禁、clock、image/installer/runtime 等；包含 `tests/bootloader-component-admission.py` 离线准入与 tree 身份/故障注入检查；不获取上游组件，不运行真实 `--strict` 来使阻断清单拖垮开发 CI。夹具不下载 DSM，installer 在可丢弃 runner 上使用 sudo 恢复属主与特殊文件。
 - **QEMU patch apply**：固定 QEMU v8.2.2，检查主来源及 GitHub mirror 回退、源码身份和补丁干净应用。
 - **Research smoke**：研究脚本参数、平台和错误路径，不作为真实访客验收。
 - **Production image build**：固定平台的原生 Docker 构建；架构/库/import、构建诊断、fake-QEMU x86 argv 和真实 patched-QEMU DC ZVA 合成验证。成功不代表 DSM 启动、KVM 或摄像头验收。
@@ -69,6 +69,7 @@ python3 tests/branding.py
 python3 tests/ci-policy.py
 python3 tests/arc-overlay.py
 python3 tests/bootloader-source-audit.py
+python3 tests/bootloader-component-admission.py
 python3 scripts/check-tree.py
 python3 scripts/check-config.py
 python3 scripts/git-hooks-test.py

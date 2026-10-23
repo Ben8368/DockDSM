@@ -1,0 +1,110 @@
+# Phase 1：组件来源与离线准入验证记录
+
+## 基线与范围
+
+- 2026-10-23（Asia/Shanghai）：先 `git fetch origin master`，`gh pr view 20 --json state,mergedAt,mergeCommit` 确认 MERGED，合并时间 `2026-10-23T08:13:26Z`。本轮 origin/master 为 `fcc7330b81ba597699804cd42f9a59c28bb9dbe1`，从其新建 `codex/bootloader-component-admission`，不使用已合并分支。
+- 实际宿主 Windows 10.0.26200 / AMD64，PowerShell 7.6.5，Git 2.53.0.windows.2，Python 3.14.2（使用原生 `python`；`python3` launcher 不提供可用版本输出），gh 2.92.0；PATH 中无原生 Docker。后续为复核旧 Shell 回归实际探测到 WSL Ubuntu 24.04 / Linux x86_64、Python 3.12.3、Git 2.43.0、Docker CLI 29.9.0 且 daemon 可访问；明确区分原生与 WSL，不把它计为真实 DSM 验收。
+- 原工作树仅未跟踪 `vendor/`，切换后成为现有 gitlink；`vendor/arc` HEAD 与 source-lock 匹配且干净。保留既有研究基线，不下载、不替换；临时报告可读，仅作线索，所有采纳结论重新从对象/API 核查。
+- 仅新增组件证据、门禁、夹具/CI 与必要文档。不导入完整引导器源码，不执行上游 img-gen/Taskfile/构建，不提交 release 资产、PAT、镜像、序列号或密钥，不改生产 Dockerfile/默认启动链。
+
+## 证据方法与结论边界
+
+正式 16 项一对一映射、完整组件状态和下一行动只维护于 [manifest](../../../research/bootloader/component-manifest.json)。本记录不复制另一套状态矩阵。主锁未修改：其 commit/tree/已有哈希继续为唯一事实。远端检查 commit/tree、tags、release 元数据、选定文本和查询结果只保存在[收据](../../../research/bootloader/evidence/github-observations-2026-10-23.json)，原始路径/模式/OID/大小的完整 tree 在[索引](../../../research/bootloader/evidence/remote-trees-2026-10-23.json)。
+
+通过 `gh api repos/AuxXxilium/<repo>`、`commits/<default_branch>`、`git/trees/<完整 commit>?recursive=1`、`git/blobs/<oid>`、`tags?per_page=5`、`releases?per_page=2` 只读采集；branch 先解析完整 commit，再读固定 tree/blob。七棵 tree 均未截断。离线重建目录 tree 对象 SHA-1，文本校验 Git blob OID/SHA256/bytes；没有下载 release 资产或递归取得源码 blobs。完整 metadata 不等于完整源码。
+
+### Buildroot Essential / Evo
+
+分别重复认证仓库/tags/releases API、匿名 API 与公开 HTML，共每仓库五个入口均 404；同会话七个可访问组件 API 成功，说明不能将问题笼统归因于整个 GitHub 网络不可用。owner 范围公开 buildroot 搜索无结果；这不是所有历史、改名或私有仓库的穷举。404 本身不区分私有/删除/迁移/调用者权限，不能认定仓库不存在，也没有证实有效重定向。没有遇到可作为本次失败解释的限流响应；不能据此推断无限访问权限。
+
+固定下载器实际将 `apex` 映射 Essential、`evo` 映射 Evo，并调用浮动 release tag。缺源码版本、defconfig、external tree、kernel/initrd config、patches、toolchain 和源码-资产关系；不能以 release 可下载代替这些证据。下一行动是请求维护者提供合法可访问源码或对应源码归档与完整构建材料。
+
+### GRUB / disk seed
+
+固定 `scripts/grub.sh` 的默认字符串是 `grub-2.14`，目标为 `i386-pc i386-efi x86_64-efi`，从 GNU FTP tar.gz 使用 `curl -k` 获取，无摘要。配方覆盖 `extra_deps.lst`，裁剪 locale/theme，引入宿主 unicode.pf2 和未锁定编译/磁盘工具；不能据此认证 tarball、具体编译器或既有 seed。没有执行任何 loop/mount/格式化。`SynoBootLoader.efi` 是零字节占位，不是有效 EFI 引导器。seed 与所有现有程序/两份压缩 kernel 模板仅从固定对象只读取哈希，没有解包或执行。
+
+### LKM / Custom / Modules
+
+LKM 完整 tree 只有 4 条目/3 blobs，README 表示发布 builds，无实现源码；tag 指向同一说明提交不能认证 rp-lkms.zip 的对应源码。Custom 完整 tree 6 条目/4 blobs，无 kernel 源码/config/patch，workflow 只 zip 外部 `*.tgz/*.gz`；README 的 5.10.55 声明不是已验证 ABI。
+
+Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。compile workflow 引用缺失的 `src/`，并动态获取 pkgscripts-ng/SDK；build workflow 浮动 clone linux-firmware。`.gitmodules` 声明历史 igc 路径与仓库，但 tree 没有该 gitlink/源码，不能认为子模块已交付。每个模块仍需源码/config/vermagic/SDK/compiler 与许可关联，firmware 许可独立。
+
+### 其他程序与材料
+
+`genArc`、`sshx`、`kpatch`、`memtest` 的固定 bytes/哈希不认证名称所暗示的任何外部项目；没有猜测同名程序版本或许可。genArc/授权绕过/服务解锁不进入迁入 allowlist。Addons 混有 tgz/库/程序，eudev 编译容器只有 tag；Configs 动态获取 arc-dsm/new/data.yml 并包含须排除的 serials 文件；Patches 需逐目标/功能/权利审查；Theme 的字体与图稿需要独立权利及生成关联。
+
+### 许可与门禁
+
+既有 DockDSM MIT 不覆盖整个第三方树；根 GPLv3、README 非商业文字、MIT 文件头及其 `/LICENSE` 引用范围待有权主体/合格审查澄清。Buildroot/GRUB/Linux/模块/工具/字体/固件的声明与对应源码义务逐项处理，DSM/PAT 独立；未推定已授权。工具只校验固定事实、收据与技术 gate，不签发法律许可，不验证 reviewer 身份签名；同时伪造全部材料的写权限攻击需要人工审查/后续签名制度，不可由 SHA 校验解决。
+
+三个 gate 分开：source_import 需要完整本地固定源码及范围/许可/权利证据；combined_build 还需固定工具链、无未锁依赖及重建关联；distribution 还需分发审查与主锁允许。手填 APPROVED 或 verified+LICENSE 不能通过，真实批准需组件/condition/identity/input 绑定的独立收据。严格模式没有例外绕过开关。
+
+## 同日重复请求复核与门禁加固
+
+- 再次 `git fetch origin master` 和查询 PR #20，确认 master 未变。接续时工作树干净，已有同范围的开放 PR #21（不是已合并旧分支），其 merge-base 正是已确认 master；复用这一独立 PR，不创建重复或 stacked PR，不改写既有提交。
+- 重新只读查询主仓库及七个组件的固定 `/git/commits/<sha>`：返回 commit/tree 全部吻合原锁/收据。Essential/Evo 各重查已配置 gh 会话的仓库/tags/releases 及匿名 API/Web，仍均为 404；公开 owner 目录 40 仓库无 buildroot 名称匹配。新[复核收据](../../../research/bootloader/evidence/github-revalidation-2026-10-23.json)以文件摘要/JSON pointer 引用原事实源，不维护第二套组件状态，也不声称排除私有/迁移/权限可能。
+- 发现并复现原门禁的四类证据绑定缺口：以 LICENSE 摘要冒充其他产物、本地文件冒充固定 Git 产物、两条 verified 收据互相引用、不同 owner 同名仓库冒充不可访问来源。四个新增用例修复前均因未拒绝伪证据而失败，修复后通过；另补重复/越界产物路径、零字节占位晋级用例。
+- 门禁现将每个固定产物绑定到同路径 Git blob 与已有摘要/大小，并拒绝重复路径、空占位晋级和 verified 收据输入环；unresolved 来源必须精确匹配观测 URL，不只比较仓库末段。没有调整状态或放宽 strict，没有改变可信 Git reader 或生产路径。
+- 原生 Windows 全量 35 tests、WSL 全量及 `unshare -Urn` 无网络 namespace 全量 35 tests 通过。实库 `--check`=0 / `--strict`=2，三个 gate 均无获准组件。Windows 首次辅助 JSON 捕获因子进程默认 GBK、父进程按 UTF-8 解码失败；显式 `-X utf8`/`PYTHONUTF8=1` 后复测通过，无须修改工具或降级检查。
+
+## PR #21 最终收据别名复核
+
+- 复核起点 `ba874e45f616e6664d9924e315fb2d73c4405fdd`，工作树干净，远端分支一致、PR 仍 OPEN，master 仍为已记录基线。该 HEAD 的 CI result 与 CodeRabbit 均 success，但 [CodeRabbit 正文审查](https://github.com/Ben8368/DockDSM/pull/21#pullrequestreview-5626519687)发现 evidence ID 可为相同收据内容的别名；没有可标记 resolved 的行内讨论，处理证据回复于同一 PR。
+- **红灯复现：** 修复实现前运行 `python3 tests/bootloader-component-admission.py AdmissionTests.test_receipt_self_alias_with_different_id_at_same_path_fails AdmissionTests.test_receipt_self_alias_with_different_path_and_same_bytes_fails AdmissionTests.test_cross_condition_cycle_through_receipt_aliases_fails AdmissionTests.test_multilevel_receipt_alias_cycle_fails`。四项均 FAIL / `ValueError not raised`：旧实现漏检同路径不同 ID、同内容不同路径、两个条件相互引用的别名，以及三个条件的多级别名循环。
+- **修复边界：** 已读取的 local/Git bytes 计算 SHA256，匹配声明及大小后才进入 verified 内容身份表；locked 摘要仅在现有 `audit.inventory` 已校验固定对象后使用。收据直接解析已经验算的本次 bytes 快照，不二次读文件。逐输入拒绝与收据自身摘要相同的别名；条件收据图改用已验证 SHA256 建边，以原有 DFS 检出跨条件/多级循环。缺失输入、直接自引用、未验证摘要、路径、源码身份和原有 gate 检查均保留。
+- **新增七项回归：** 上述四项加上修改任一端声明哈希仍拒绝、缺失/未验证/直接自引用输入仍拒绝、正常多级无环引用和普通独立证据同内容可通过。未把任何 JSON 都自动认作评审收据：图只包含已按 component/condition/source identity 验证的活动条件收据，普通已验算材料仍可作为叶节点。可信写入者伪造全部实质证据/审查身份仍不在摘要一致性工具的保证内。
+- **docstring：** [既有警告](https://github.com/Ben8368/DockDSM/pull/21#issuecomment-6361394087)报 8.96% / 阈值 80%，是 CodeRabbit pre-merge 文档警告；当时没有阻止 CI result 或 commit status 成功，也不是本地执行失败。为校验器公开入口、路径/Git/摘要/图的信任边界及故障注入函数补充参数语义、失败条件和副作用；不修改 CodeRabbit 配置或 CI。AST 实测 `check-bootloader-admission.py` 19/19、`audit-bootloader-source.py` 3/3、组件测试 52/52 及新增 CI 策略测试 1/1 有 docstring；这是本地统计，不冒充远端工具输出。
+- **绿灯验证：** Windows PowerShell 7.6.5 / AMD64 / Python 3.14.2，WSL Ubuntu 24.04 / Linux x86_64 / Python 3.12.3（均重新探测）。Windows/WSL 全量 42 项准入测试、11 项源码审计通过；WSL `unshare -Urn` 的 42 项断网回归通过。`--check`=0 / `--strict`=2，所有 gate 仍拒绝。其余实际命令及结果见下表；组件清单、source-lock、RISK-006 及生产路径未修改，不迁移源码、不合并、不发布。
+
+### 同轮远端复审补充：tree inventory 快照
+
+- `0ea6866e998b95835760cc7e4e1185fd44d10a3c` 的 CI result / CodeRabbit 均 success，远端 docstring coverage 实际为 **97.40%**（77 functions / 4 files，阈值 80%），既有警告解除；本地 AST 与远端统计口径分别保留，不混称相同指标。
+- [该 HEAD 新正文审查](https://github.com/Ben8368/DockDSM/pull/21#pullrequestreview-5626785121)仍指出 `verify_observations` 校验 tree inventory 后，origin path 会另读磁盘副本。新故障注入在校验结束后向文件添加不存在的路径，旧实现漏检（FAIL / `ValueError not raised`）；另在校验后删除路径，旧实现错误拒绝（ERROR）；空/非空快照返回契约检查也失败。
+- `verify_observations` 现返回实际验证的 tree snapshot，无仓库时返回 `{}`；`evaluate` 直接从此快照读取 origin 路径，不再二次读取 inventory。新增三项测试覆盖添加/删除替换和返回契约；没有模拟验证成功或跳过摘要/tree/文本校验。全套准入回归增至 **45 tests**，原七项收据别名回归继续保留。
+- 这次补充只涉及校验器、其测试与本唯一证据记录；源码锁、组件清单、CI 配置、RISK-006、生产路径均保持。45 项 Windows/WSL/断网准入、11 项源码审计及下列检查作为最终提交验证；修复继续在 PR #21 追加提交并回复正文意见，不沿用前一 HEAD 的绿灯作为新提交结论。
+
+### 同轮安全摘要补充：固定审查主体与输入身份
+
+- `6cbc5fb4e80f34066ddea89ee6715de7416841ce` 的 CI result / CodeRabbit 均 success，docstring coverage 实际 97.59%，最近 review 标记无新增 actionable comments；但其[安全摘要](https://github.com/Ben8368/DockDSM/pull/21#issuecomment-6361394087)保留了收据 replay 的具体路径，因此继续核实而未以绿色状态代替审查。
+- 修复前，保持所有收据 bytes 不变，仅将已批准夹具的 `origin.paths` 从 LICENSE 扩大到 `/`、将 `license` 输入 ID 改绑到另一个正确哈希的本地文件、或替换所选 pinned artifact，三个拒绝测试均 FAIL / `ValueError not raised`。当前实际组件没有批准收据，风险不影响生产，但不能把这个失效模式留给首次准入。
+- 收据改为 schema 2，增加 `subject_sha256` 与 `input_digests`。canonical subject 使用固定排序/JSON 编码，绑定组件 ID/名称、source identity、origin scope、源码/许可声明及直接证据的 kind/path/locator/实际摘要、artifact 选择、build 契约和门禁 requirement；不纳入收据自身内容，避免循环摘要。输入期望摘要必须与已实际验算的内容身份逐一相符，且键集合精确匹配 inputs；原 alias/DFS、路径、缺失输入和身份检查全部保留。schema 1 收据不获默认准入，manifest 与 source-lock schema 未改，也没有真实批准材料需要迁移。
+- 另加四项测试：非 source/license/artifact 的独立条件输入改绑、build 契约变化、旧收据拒绝，以及明确重新签发合成收据后的范围变更正例。新增七项使准入回归达到 **52 tests**；正常多级无环引用以叶到根生成固定输入摘要，原同内容 alias、跨条件/多级环及伪造哈希测试继续通过。
+- 签名/审查身份认证仍属于明确的人工信任边界：能同时伪造全部收据文件和清单的写权限攻击不由摘要一致性解决；工具不声明权利人许可。本次只阻断“保留原收据 bytes、修改 manifest 就复用批准”的已证实漏洞，不生成实际 APPROVED。
+
+### 同轮测试审查补充：精确拒绝原因
+
+- `a0df5a0` 的[inline 意见](https://github.com/Ben8368/DockDSM/pull/21#discussion_r4358681568)指出四个 replay 用例的裸 `assertRaises(ValueError)` 可能被无关失败满足。范围扩大、直接输入改绑和产物替换现明确要求 `subject scope`；旧版本测试分别要求“字段完整但 schema=1”触发 `subject/identity mismatch`，以及原 schema 1 缺少绑定字段触发 `schema fields mismatch`。
+- 该意见称原替换产物不是有效 Git 证据，实际复核不成立：setUp 将 `license` 设为 `locked`，由 `audit.inventory` 对精确 Git blob 验证；仅收紧断言即通过，证明已到达主体绑定检查。因此保留合法夹具，未为迎合建议增加另一份重复 Git 证据。测试数量仍为 52，生产校验器及全部组件事实均未变。
+- 对本次断言执行额外 mutation：仅在内存加载的校验器副本把 `if receipt['subject_sha256'] != reviewed_subject:` 改为 `if False:`，不编辑源文件。三个范围/输入/产物测试全部 FAIL；输入改绑落到另一条 `input content identity` 拒绝时也因不匹配 `subject scope` 失败，证明不再由其他错误冒充主体保护。未变异的 Windows/WSL/断网 52 项与源码审计 11 项完整通过，check=0 / strict=2。
+
+## 🚦 Audit Report
+
+**总体评价：🟡 可通行（仅本工作包；迁移/组合构建/分发保持阻断）**
+
+**1. 🔴 阻断项：** 不存在生产/数据路径改动；组件自身阻断保留，RISK-006 不关闭。
+
+**2. 🟡 跟进项：** 权利范围、缺失对应源码、工具链/依赖/产物关联见 manifest 与 RISK-006。任何证据哈希/版本不符失败关闭。外部来源无法访问即交付阻断，不无限等待。
+
+**3. 验证计划与结果：** 下表记录实际命令；离线夹具覆盖原用户数据/对象/config/index/mtime 不变、Git 环境污染、partial clone 缺对象不 lazy fetch、链接/路径越界、未知状态、缺字段/重复 ID/键、错误摘要和逐条件撤销的 mutation。CI 只在现有两架构合成 job 追加轻量回归，没有减弱原镜像/门禁。
+
+| 命令（仓库根） | 结果 |
+| --- | --- |
+| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 最终主体绑定加固后 52 tests，Windows/WSL 均完整通过 |
+| `python tests/bootloader-source-audit.py` | 11 tests 通过 |
+| `python scripts/check-bootloader-admission.py --check` | exit 0；如实报告阻断 |
+| `python scripts/check-bootloader-admission.py --strict` | exit 2，预期拒绝；非回归失败 |
+| WSL `unshare -Urn env PYTHONDONTWRITEBYTECODE=1 python3 tests/bootloader-component-admission.py` | 独立无网络 namespace 中 52 tests 通过 |
+| `python scripts/governance-docs-check.py` / `python tests/governance-docs.py` | 通过 |
+| `python tests/ci-policy.py` / `python tests/branding.py` | 最终 21 / 5 tests 通过 |
+| `python scripts/check-config.py` / `python scripts/check-tree.py` / `git diff --check` | 通过（包含暂存新增文件） |
+| `python scripts/install-git-hooks.py` / `python scripts/git-hooks-test.py` | hook 已启用；Codex/Cursor/Claude/Jules/human 五类通过 |
+| WSL `python3 tests/arc-overlay.py` | 8 tests 通过；只对临时夹具应用补丁 |
+| WSL `bash research/arm64/tests/smoke.sh` | 通过；假 QEMU/合成参数不是真机证据 |
+
+补充异常记录：原生 `python tests/arc-overlay.py` 首次及 UTF-8 复测均失败（8 errors），因为 Windows 的 `bash` 指向 WSL，警告为 UTF-16 且脚本路径是 Windows 格式；确认 WSL 后在 Linux 路径下复测通过，未为此修改旧脚本或放宽测试。PowerShell 截断 JSON 管道的首轮 `$LASTEXITCODE` 不可靠，后改用 `subprocess.run` 直接捕获，确定 strict=2。
+
+未运行：真实第三方重建、DSM 冷启动/存储/设备/KVM、Docker 双架构镜像。这些不属于本工作包；CI 的双架构和镜像结果另由远端实际运行确认，不以本地门禁代替。无自动合并、镜像发布或分支保护变更。
+
+## 后续工作与回退
+
+目前没有合法可立即迁移的组件。最小下一包是**缺失来源与许可确认的证据收集**；候选的、不含 serials/动态 data 的平台配置 allowlist 也必须先获准，不能先搬源码再补许可。GRUB 隔离生成器、真实源码迁移、品牌接口和后续 x86/ARM64 均另行授权和验收。撤回本工作包提交即可回到 PR #20 门禁，不影响现有生产数据或研究 submodule。

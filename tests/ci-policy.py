@@ -232,6 +232,14 @@ class WiringTests(unittest.TestCase):
         self.assertEqual(publish['jobs']['publish']['permissions']['packages'], 'write')
         self.assertFalse((ROOT / '.github/workflows/hub.yml').exists())
 
+    def test_admission_regression_runs_on_native_matrix(self):
+        """Keep offline regression on both native architectures without making honest strict holds fail CI."""
+        job = workflow('test.yml')['jobs']['tests']
+        steps = [step.get('run', '') for step in job['steps']]
+        self.assertTrue(any('python3 tests/bootloader-component-admission.py' in step for step in steps))
+        self.assertFalse(any('check-bootloader-admission.py --strict' in step for step in steps))
+        self.assertEqual({item['arch'] for item in job['strategy']['matrix']['include']}, {'amd64', 'arm64'})
+
     def test_native_architectures_and_bot_policy(self):
         ci = workflow('test.yml')
         images = workflow('arm-qemu-build.yml')
