@@ -42,7 +42,7 @@
 
 - **阻断 Gate：** ARC 生产支持、捆绑/分发或商业许可声明。
 - **问题：** 上游 x86 Docker/QEMU 示例不能替代本仓库的完整 DSM 启动、模型、存储、网络、健康检查、关机、升级/恢复证据；README 使用声明与 GPLv3 LICENSE 的适用边界仍需澄清。
-- **当前策略：** 按 [ADR 0006](ADR/0006-runtime-profiles-and-container-first.md)，ARC 为后续可选 Boot Provider，先完成基线与运行层门禁；ARM64 loader 独立研究。固定版本、隔离数据盘、完成组件许可/DSM 边界审查前，不捆绑或分发 ARC；不启用授权/序列号绕过，保持现有 Virtual DSM/DS124 路径。
+- **当前策略：** 按 [ADR 0009](ADR/0009-owned-bootloader-source.md) 接管 DockDSM Bootloader；[源码审计](bootloader-source-audit.md)已识别浮动 Buildroot/releases、预编译 blob 和许可适用范围缺口。许可证/二进制来源/可构建源码闭包未关闭前，保留固定研究 submodule，不整体迁移或捆绑争议产物；不迁入授权/序列号绕过，保持 Virtual DSM/DS124。
 - **关闭证据：** 确认适用许可及 DSM 使用约束；独立 profile 通过全新盘安装、管理面、持久化、干净关机和升级恢复验收后，另行决定支持范围。
 
 ### RISK-007（P1）：Mac 容器后端的加速、持久化与性能选型未验证

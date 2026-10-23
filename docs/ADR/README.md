@@ -23,6 +23,7 @@ ADR 记录影响长期维护的决定及理由。
 | [0003](0003-dockdsm-identity.md) | 部分替代 | 命名、来源披露与兼容迁移继续有效；保留旧 Git 历史的决定由 0004 替代 |
 | [0004](0004-reinitialized-history-and-arc-roadmap.md) | 部分替代 | 历史重建、归属与数据隔离继续有效；统一 ARC 路线由 0006 替代 |
 | [0005](0005-ci-validation-layers.md) | 已接受 | CI 分层、统一结果门禁与初始化全树检查 |
-| [0006](0006-runtime-profiles-and-container-first.md) | 已接受 | 性能先行、Profile/Runtime 分层、ARC 可选与容器优先设备矩阵 |
+| [0006](0006-runtime-profiles-and-container-first.md) | 部分替代 | 分层、兼容与容器优先继续有效；接管顺序、引导器品牌/维护方式由 0009 替代 |
 | [0007](0007-bot-collaboration.md) | 部分替代 | 自动小修复交由 0008；短期分支、人工合并及保护边界继续有效 |
 | [0008](0008-scoped-bot-autofix.md) | 已接受 | 低风险 PR 自动修复、维护者 Issue 自动派单与单写入者交接 |
+| [0009](0009-owned-bootloader-source.md) | 已接受 | 统一 DockDSM Bootloader、许可准入与自主源码接管阶段 |

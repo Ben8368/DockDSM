@@ -1,16 +1,28 @@
 # DockDSM 运行架构与性能实施计划
 
-本文件固定工作包、依赖和退出条件；执行状态只在 [CONTEXT](../CONTEXT.md) 更新。设计依据是维护者指定的[项目分析对话](https://chatgpt.com/share/6ad9a9ea-a228-83ea-9c94-b4c2aaadc0fa)与 2026-10-22 源码快照 tag `refs/tags/evidence/2bebdb2`（解引用为 `2bebdb2`；该根提交已被当前根提交取代，证据边界见 [PROVENANCE](PROVENANCE.md#已重建根提交的证据边界)）。本轮交付为规划文档，不实现控制器、启动配置或性能补丁。
+本文件固定工作包、依赖和退出条件；执行状态只在 [CONTEXT](../CONTEXT.md) 更新。设计依据是维护者指定的[项目分析对话](https://chatgpt.com/share/6ad9a9ea-a228-83ea-9c94-b4c2aaadc0fa)与 2026-10-22 源码快照 tag `refs/tags/evidence/2bebdb2`（解引用为 `2bebdb2`；该根提交已被当前根提交取代，证据边界见 [PROVENANCE](PROVENANCE.md#已重建根提交的证据边界)）。原性能规划保留为工作包索引；新的源码接管与研发顺序由 [ADR 0009](ADR/0009-owned-bootloader-source.md) 接管，不代表启动接口已实现。
 
 ## 方向与边界
 
-采用“局部性能实验起步，逐步重构运行架构”的路线。保留 DSM 硬件兼容、安装校验、QEMU 补丁及现有回归；把平台描述、启动提供者、运行后端、存储和生命周期逐步分离。ARC 是可选 Boot Provider，ARM64 direct boot 保留，详见 [ADR 0006](ADR/0006-runtime-profiles-and-container-first.md)。
+采用“先源码准入、再渐进接管和运行验收”的路线；设备性能证据仍独立采集。保留 DSM 硬件兼容、安装校验、QEMU 补丁及现有回归；把平台描述、启动提供者、运行后端、存储和生命周期逐步分离。自有引导器品牌为 DockDSM Bootloader，ARM64 direct boot 保留，详见 [ADR 0009](ADR/0009-owned-bootloader-source.md)。
 
 - x86、MacBook Air M5、RK3588 为首批设备；具体组合与预检见[测试矩阵](test-matrix.md)。拥有设备不代表该组合已通过验收。
 - RK3588 只允许 Docker 容器验证，所有探针、QEMU、负载和采集工具在容器/其 DSM guest 内执行；不安排 Host QEMU、宿主工具安装、内核替换或宿主桥接改造。
 - Mac 以最佳容器化体验为目标：比较外层容器后端、内层加速及存储路径；保留 KVM 兼容，不预设 KVM、VZ 或 Docker VMM 标签能单独代表胜出，见 [Mac 选型](mac-container-evaluation.md)。
 - 首批交付为本地单机 CLI 与 Docker 路径；API/Web、多用户控制、Host QEMU、libvirt、ARM64 loader 均有独立后续门槛。
 - 旧盘不自动迁移。任何新 profile、存储格式、ARC 实验均使用独立空目录或已停机的一次性副本。
+
+## 自主源码与引导器阶段
+
+| 阶段 | 可审查交付 | 验收与回退 |
+| --- | --- | --- |
+| Phase 0 | PR #19 固定源码入口、CI 和有效审查修复 | 最新 HEAD CI/CodeRabbit success、解决讨论后合并；不改生产链 |
+| Phase 1 | 只读 Git object 审计、版本锁定、subtree/snapshot 评估；准入后独立源码导入 | 逐组件许可证、Buildroot/GRUB 源码闭包和二进制来源；未关闭则保留研究 submodule，不捆绑产物 |
+| Phase 2 | DockDSM 用户可见品牌、Profile → Boot Provider → LaunchPlan → Runtime 契约 | 旧平台 ENV/argv/数据等价回归；plan-only 不写盘，按旧入口回退 |
+| Phase 3 | 自有源码构建 x86 boot image、独立 loader state/DSM disks、QEMU 启动与管理 | L0/L1、全新盘 L2 安装/持久化/干净关机，指定宿主 L3；备份恢复并验证回退 |
+| Phase 4 | ARM64 Bootloader 可行性、最小启动实验和专用 backend | x86 先验收；Buildroot/boot kernel/initrd/firmware/DT/modules/交接逐级取证；失败保留 direct boot |
+
+许可与供应链未关闭时可以进行静态研究和离线合成，但不整体导入争议源码/二进制或发布组合产物。具体准入见[源码审计](bootloader-source-audit.md)。每阶段从已合并 master 建分支，后续 PR 不自动合并或发布。
 
 ## 源码审查得到的工作入口
 
@@ -29,16 +41,15 @@
 
 ```mermaid
 flowchart LR
-  G0["G0 范围与依赖固定"] --> G1["G1 三设备基线 / Mac 容器选型"]
-  G1 --> G2["G2 KVM、日志、网络、I/O 实验"]
-  G2 --> G3["G3 Profile / Boot Provider / Runtime"]
-  G3 --> G4["G4 生命周期、存储、恢复"]
-  G4 --> G5["G5 ARC x86 隔离 PoC"]
-  G4 --> H["独立评估 x86 Host QEMU"]
-  G5 --> R["独立评估 ARM64 loader"]
+  P0["Phase 0 PR #19"] --> P1["Phase 1 源码审计与准入接管"]
+  P1 --> P2["Phase 2 品牌与分层接口"]
+  P2 --> P3["Phase 3 x86 构建与运行验收"]
+  P3 --> P4["Phase 4 ARM64 backend 研究"]
+  B["设备登记与性能基线"] --> V["对应设备的 L2/L3 验收"]
+  P3 --> V
 ```
 
-G0 的依赖盘点可与 G1 设备预检并行；G2 单项实验互相独立。这里指工作依赖，不要求启用多代理或同时占用设备。网络、磁盘、QEMU 版本变更不放进同一次对照。
+以下 G0–G5 保留为质量与性能门禁编号，不再定义全局开发顺序。G1/G2 的设备实验不阻断 Phase 1 静态接管审计或 Phase 2 接口工作；切换实际运行路径前仍须完成对应平台的兼容、存储和硬件验证。网络、磁盘、QEMU 版本变更不放进同一次对照。
 
 | Gate | 交付与退出条件 | 失败后处理 |
 | --- | --- | --- |
@@ -47,13 +58,13 @@ G0 的依赖盘点可与 G1 设备预检并行；G2 单项实验互相独立。�
 | G2 局部优化 | 每个保留候选有 A/B 结果、兼容与数据门禁；无收益项也保留结论 | 退回该变量；不扩大修改范围“救”跑分 |
 | G3 分层等价 | 两个既有 profile 的计划/argv 等价、失败输入明确；旧入口仍可回退 | 旧执行器继续默认；禁止同时更换设备/磁盘布局 |
 | G4 可恢复运行 | 正常/强制退出可区分；旧盘兼容、锁、元数据事务、备份恢复通过主矩阵；24h 稳定性通过 | 不切换默认控制器；数据失败阻断该发布候选 |
-| G5 扩展性 | ARC x86 经新接口隔离安装、持久化、关机与恢复；新增 profile 不改其他 profile 安装逻辑 | ARC 保持实验项；不阻断既有平台独立发布 |
+| G5 扩展性 | DockDSM Bootloader x86 经新接口隔离安装、持久化、关机与恢复；新增 profile 不改其他 profile 安装逻辑 | 新引导链保持实验项；不阻断既有平台独立发布 |
 
-G1–G4 的三设备闭环是本路线首个工程完成目标；Mac 的最终候选与 M1 基准分别留证。ARM64 loader 不作为首个目标的依赖。未经证据不承诺具体提速倍数或日历发布日期。
+G1–G4 的三设备闭环限定可宣称的运行与性能范围；Mac 的最终候选与 M1 基准分别留证。源码接管和 x86 引导链按 Phase 顺序独立推进；ARM64 loader 必须等待 x86 工作链验收。未经证据不承诺具体提速倍数或日历发布日期。
 
 ## 可分派工作包
 
-责任域沿用 [MAINTAINERS](MAINTAINERS.md)。所有条目均为计划，后续一个 PR 处理一个主题，不在本轮创建外部 issue 或 PR。
+责任域沿用 [MAINTAINERS](MAINTAINERS.md)。以下保留工作包定义与责任域，执行状态见 CONTEXT；源码准入交付按 Phase 1 单独审查，后续一个 PR 处理一个主题。
 
 | ID / 优先级 | 工作与具体交付 | 依赖 | 验收 / 责任域 |
 | --- | --- | --- | --- |
@@ -66,21 +77,21 @@ G1–G4 的三设备闭环是本路线首个工程完成目标；Mac 的最终�
 | W21 / P1 | 普通/详细日志分离，逐项验证 debug cmdline | W10、W11 | 可观察到必要启动/错误/关机；冷启动 A/B；ARM runtime |
 | W22 / P1 | 保留 USB CDC，仅替换 user/TAP 后端做隔离实验 | W10 | 网络收益、权限清单、失败清理；RK 不改宿主桥接；Platforms |
 | W23 / P1 | AHCI/raw 不变，对 cache、AIO、存储落点逐项实验 | W10 | fsync/持久性/副本恢复及 I/O 对照；ARM runtime |
-| W30 / P1 | versioned Profile / VMConfig / HostCapabilities / LaunchPlan schema 和校验器 | G2 | 未知字段/版本失败；白名单能力，无任意 Shell；Platforms |
+| W30 / P1 | versioned Profile / VMConfig / HostCapabilities / LaunchPlan schema 和校验器 | Phase 1 准入、G0；设备性能实验独立 | 未知字段/版本失败；白名单能力，无任意 Shell；Platforms |
 | W31 / P1 | Python 只读计划与 argv 构建；legacy adapter 对照 | W30 | 两 profile 快照、边界输入和实际镜像命令一致；Platforms |
 | W32 / P1 | 受控切换 Docker runtime adapter；保持旧入口和回退路径 | W31 | X1/M1/R1 冷启动不改硬件契约；Platforms |
 | W40 / P0 | 生命周期、单一 QMP owner、关机请求接口；DSM 授权 API 可行性先行 | W32 | 无凭据/错误凭据/超时不假报 clean；TD-001 有真实闭环；ARM runtime |
 | W41 / P0 | 就绪状态分维度、带时间与证据；采集失败为 unknown | W11、W40 | HTTP 200/旧缓存不提升 configured/volume；Quality |
 | W42 / P0 | 新状态布局、独占锁、原子代次发布；旧盘适配与离线恢复 | W32、W40 | 并发启动、断电副本、未知 schema、空间不足不替换旧盘；ARM runtime |
-| W43 / P2 | 按 guest 拆分 runtime 产物，控制层是否独立打包由实测决定 | W01、G4 | 构建时间/镜像大小/更新维护收益明确；保留双宿主架构；CI / Release |
-| W50 / P1 | 固定 ARC 组件，独立 `arc-x86` profile PoC | G4、RISK-006 组件审查 | [ARC 门禁](arc-integration.md)；Product / Platforms |
+| W43 / P2 | 统一产品镜像内按需分离 bootloader/runtime 构建 stage | W01、G4 | 构建时间/镜像大小/更新维护收益明确；保留双宿主架构；CI / Release |
+| W50 / P1 | 准入后接管引导器组件，独立 `full-x86_64` profile PoC | G4、RISK-006 组件审查 | [源码准入](bootloader-source-audit.md)与 Phase 3 运行门禁；Product / Platforms |
 | W60 / P2 | x86 Linux Host QEMU 接口适配评估 | G4 | 同硬件对照证明管理需求；RK 排除；Platforms |
 | W61 / P2 | ARM64 loader 可行性与维护成本报告 | G5 | 构建/交接/设备/许可矩阵，无收益则暂缓；Platforms |
 | W62 / P2 | 新 QEMU 版本与 TCG 热点实验 | G2、独立 ADR | 四补丁语义与 DC ZVA 合成/真实回归，无 watchdog 放宽；QEMU / TCG |
 
 ## 实施与回退规则
 
-1. 后续开发先做 W00/W01/W10/W12；不先批量搬目录、重写驱动或引入 Web 服务。
+1. 源码接管按上述 Phase 顺序推进；W00/W01/W10/W12 的真实设备证据不由审计或合成替代，不批量搬目录或重写驱动。
 2. 优化与重构分别留对照：G2 可改变一个运行选项；G3 只改变组织形式。发生性能回归时能确定是哪个变量导致。
 3. 控制器灰度先用于新建试验 VM。旧存储由 legacy adapter 原路径打开，首启不重命名、不重分区、不自动转 qcow2。
 4. 回退必须配对恢复控制器、profile、镜像和元数据备份；若磁盘已由新 DSM 修改，不能只退镜像标签。数据库或磁盘跨版本回退需要停机备份恢复证据。
@@ -93,6 +104,6 @@ G1–G4 的三设备闭环是本路线首个工程完成目标；Mac 的最终�
 - [三设备测试矩阵](test-matrix.md)：宿主、guest、加速器、执行边界及证据。
 - [Mac 容器后端选型](mac-container-evaluation.md)：候选资格、性能取舍与决策方法。
 - [性能基线协议](performance-baseline.md)：负载、测量、重复性与判定。
-- [ADR 0006](ADR/0006-runtime-profiles-and-container-first.md)：替代统一 ARC 路线的长期决定。
+- [ADR 0009](ADR/0009-owned-bootloader-source.md)：自主引导器接管顺序；[ADR 0006](ADR/0006-runtime-profiles-and-container-first.md) 保留兼容/性能工作包的历史依据。
 
 设备接入地址、x86 CPU/OS、RK3588 板型/内核/存储、三台 RAM 和 Mac 软件版本均在 W00 执行时补齐；这些未知项不妨碍本轮完成规划，也不会被写成已验证能力。

@@ -6,7 +6,7 @@ DockDSM 感谢 [vdsm/virtual-dsm](https://github.com/vdsm/virtual-dsm) 提供 Do
 
 需要区分致谢与代码来源：当前代码库的一部分直接源自 vdsm/virtual-dsm。原始导入基线为 [`88c2d4673aa428c9dc9c9ae90eaf63d0e8e2335c`](https://github.com/vdsm/virtual-dsm/commit/88c2d4673aa428c9dc9c9ae90eaf63d0e8e2335c)（`build: Update QEMU base image to v7.50 (#1404)`）。原作者与贡献者归属继续保留；继承的 [MIT 许可证](../license.md)继续适用。重建 Git 历史、改名或独立维护都不改变这一事实。
 
-ARC 源码仍由独立 submodule 提供，DockDSM 仓库只保存 gitlink 与本地补丁，不复制 ARC 源码文件或将其并入自有 MIT 代码。ARC 上游 README 声明禁止商业使用，仓库 `LICENSE` 标记 GPL-3.0，部分源文件另有 MIT 头部；其适用范围尚未澄清。因此当前不把 ARC 源码或构建产物捆绑到 DockDSM 镜像/发布物，不作商业使用授权声明。后续采用、构建或分发前，须按具体组件核实许可证、声明、来源和分发条件。Synology DSM、PAT、第三方基础镜像、QEMU 及其他依赖各自的权利与许可独立处理。细节见 [ARC 集成记录](arc-integration.md) 和 [ARC 研究说明](../research/arc/README.md)。
+ARC 源码仍由独立 submodule 提供，DockDSM 仓库只保存 gitlink 与本地补丁，不复制 ARC 源码文件或将其并入自有 MIT 代码。ARC 上游 README 声明禁止商业使用，仓库 `LICENSE` 标记 GPL-3.0，部分源文件另有 MIT 头部；其适用范围尚未澄清。因此当前不把 ARC 源码或构建产物捆绑到 DockDSM 镜像/发布物，不作商业使用授权声明。后续采用、构建或分发前，须按具体组件核实许可证、声明、来源和分发条件。Synology DSM、PAT、第三方基础镜像、QEMU 及其他依赖各自的权利与许可独立处理。源码接管方案与只读证据校验见[源码审计](bootloader-source-audit.md)；历史 overlay 见 [ARC 集成记录](arc-integration.md) 和 [ARC 研究说明](../research/arc/README.md)。最终自有引导器使用 DockDSM Bootloader 品牌，来源与许可证不因改名变化。
 
 ## 独立维护与仓库历史
 

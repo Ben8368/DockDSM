@@ -1,6 +1,8 @@
 # ADR 0006：以平台配置和可选启动提供者逐步重构运行架构
 
-- 状态：已接受
+- 状态：部分替代
+- superseded by：[ADR 0009](0009-owned-bootloader-source.md)
+- 替代范围：源码接管顺序、引导器品牌与自主维护方式由 [ADR 0009](0009-owned-bootloader-source.md) 接管；本 ADR 的既有平台兼容、分层、数据隔离与设备门禁继续有效。
 - 日期：2026-10-22
 - supersedes：ADR 0004 的统一 ARC 目标启动链和 ARC 优先顺序；保留其历史重建、来源归属、数据隔离与独立维护决定。
 

@@ -1,44 +1,39 @@
 # 当前状态
 
 > **最后确认：** 2026-10-23
-> **阶段：** 性能基线与运行架构规划已落文档；x86 安装恢复保护和启动健康检查已合入并通过 CI，未进行 DSM/设备验收。
-> **代码基线：** DockDSM `master` 已包含治理、自动化、健康检查与安装恢复保护；产品代码仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct-boot ARM64。
+> **阶段：** Phase 0 已合并；Phase 1 源码审计与版本锁定，源码迁移尚未准入。
+> **代码基线：** master `4a70602`；生产路径仍为 Virtual DSM x86 与实验性 DS124 `rtd1619b` direct boot。
 
 ## 当前决策
 
-- DockDSM 独立维护，不自动同步上游；Git 根历史重建不改变现有代码来源和 MIT 归属，见 [PROVENANCE](docs/PROVENANCE.md) 与 [ADR 0004](docs/ADR/0004-reinitialized-history-and-arc-roadmap.md)。
-- 采用性能实验 → Profile/Runtime 分层 → 生命周期/存储 → 扩展平台路线；ARC 是可选 Boot Provider，见 [ADR 0006](docs/ADR/0006-runtime-profiles-and-container-first.md)。
-- 设备为 x86、MacBook Air M5、RK3588；RK 仅 Docker 容器验证，Mac 比较容器后端后选型，详见[测试矩阵](docs/test-matrix.md)。
-- 当前 `virtualdsm` 与 DS124 `rtd1619b` 启动实现和存储兼容边界保持不变；见 [平台契约](docs/platforms.md)。
-- CI 已采用保守范围路由、原生双架构检查和统一 `CI result`；发布仍需手动授权，见 [CI 设计](docs/ci.md)。
-- Renovate / Jules / CodeRabbit 已接入；[依赖看板 #3](https://github.com/Ben8368/DockDSM/issues/3)的 `actions/github-script` v9 更新已批准并生成 PR #11，普通依赖仍须人工审查和合并；Issue 自动派单 workflow 已合入，端到端派单证据仍按 [RISK-008](docs/RISK_REGISTER.md#risk-008p1机器人自动写入与自动派单端到端未验收) 跟进，边界见 [ADR 0008](docs/ADR/0008-scoped-bot-autofix.md)。
-- 生产 QEMU 补丁仍只经 [8.2.2 补丁系列](patches/qemu/8.2.2/README.md)进入镜像。
+- DockDSM 独立维护，不自动同步上游；源码归属与历史边界见 [PROVENANCE](docs/PROVENANCE.md)。
+- 自主源码接管 → DockDSM 品牌/接口 → x86 Bootloader → ARM64 backend；逐阶段验收，见 [ADR 0009](docs/ADR/0009-owned-bootloader-source.md) 与[实施计划](docs/implementation-plan.md)。
+- 准入后优先 subtree squash，选择性 snapshot 为备选；临时研究 submodule 不等于最终维护架构，见[源码审计](docs/bootloader-source-audit.md)。
+- `virtualdsm` / `rtd1619b` 与旧盘边界保持；`full-x86_64` / `full-arm64` 尚未实现，不加入生产白名单，见[平台契约](docs/platforms.md)。
+- x86、MacBook Air M5、RK3588 分别取证；RK 仅 Docker 验证，Mac 后端需实测选型，见[测试矩阵](docs/test-matrix.md)。
+- 生产 QEMU 补丁只经 [8.2.2 系列](patches/qemu/8.2.2/README.md)进入镜像；CI 和机器人规则见 [CI](docs/ci.md) 与 [ADR 0008](docs/ADR/0008-scoped-bot-autofix.md)。
+- 后续 PR 不自动合并；正式镜像发布仍须另行授权。
 
 ## 近期优先级
 
-1. W00/W01：补齐三设备环境登记，固定镜像、QEMU 与工具来源。
-2. W10–W12：执行既有平台基线及 Mac 容器候选资格/性能对照，记录真实 accelerator 与就绪证据。
-3. W20–W23：按基线选择 KVM、日志、网络和 I/O 单变量实验；之后进入平台/状态分层，见[实施计划](docs/implementation-plan.md)。
+1. 逐组件澄清许可证范围、预编译 blob 来源与 Buildroot/GRUB 构建闭包，关闭源码迁移准入项。
+2. 准入后在独立 PR 接管可构建源码，保留来源、许可、固定输入和回退路径。
+3. 接管后实现中立 Profile / Boot Provider 契约，以旧平台等价回归保护存储和生命周期。
 
 ## 当前阻断与风险
 
-- ARC 尚未进入 Docker/QEMU 生产镜像或当前默认启动链；现有 ARM64 是 direct boot，不是 ARC。ARC x86 以及 ARM64 loader 均未验收，见 [ARC 路线](docs/arc-integration.md) 与 [RISK-006](docs/RISK_REGISTER.md)。
-- 既有 ARM64 Phase 4A/K5 与 Phase 3/F5 证据只适用于记录的 DS124 direct-boot 环境，不可转用于 ARC 启动链或裸机可移植性声明。
-- RK3588、Mac 新容器后端及本轮性能基线未运行；设备软件/资源需盘点，见 [RISK-002/007](docs/RISK_REGISTER.md)。
+- 根 GPLv3、README 非商业声明、文件 MIT 头及依赖源码范围未闭合；不整体搬入争议内容或捆绑分发，见 [RISK-006](docs/RISK_REGISTER.md#risk-006p1arc-集成尚无运行与许可边界证据)。
+- 自有引导器未构建或接入生产；DS124 direct boot 证据不代表 ARM64 Bootloader 移植成功。
+- 本轮宿主为 Windows x64 + WSL Ubuntu x86_64；未运行 DSM L2、KVM L3、Mac 或 RK3588 测试；设备风险见 [RISK-002/007](docs/RISK_REGISTER.md)。
 
 ## 最近验证
 
-- 2026-10-23：PR #19 gitlink/路径修复通过本地 L0/L1 和固定上游补丁应用；DSM/硬件验收未运行，见[回归证据](docs/archive/reviews/2026-10-23-pr19-review-fixes.md)。
-- 2026-10-22：W01 锁定 Docker/工具/Python 输入；native amd64 镜像及 QEMU 无缓存构建、QEMU 补丁与镜像回归通过，Python 3.13 amd64/arm64 wheel 哈希解析通过。APT 仍未固定；native arm64、DSM 冷启动未运行，详见[依赖清单](docs/dependency-locks.md)与 [RISK-009](docs/RISK_REGISTER.md)。
-- 2026-10-22：x86 不完整安装保盘修复与启动健康检查分别经 PR #9、#8 合入，CI 和合成回归通过；未运行 DSM 冷启动或设备验收，见[修复与派单记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
-- 2026-10-22：重建根提交边界见[PROVENANCE](docs/PROVENANCE.md#已重建根提交的证据边界)；范围记录见[规划审查](docs/archive/reviews/2026-10-22-runtime-plan.md)。
-- 2026-10-22：自动化配置、署名校验及云端结果见[接入记录](docs/archive/reviews/2026-10-22-bot-setup.md)。
-- 2026-10-22：核验 master 分支保护，并加固治理检查、ADR 语义与重建提交证据边界，见[治理加固记录](docs/archive/reviews/2026-10-22-governance-hardening.md)。
-
-- 2026-10-22：低风险 PR 规则 Active、现有两条 PR 不匹配；本地派单回归与未验收边界见[自动修复记录](docs/archive/reviews/2026-10-22-bot-autofix.md)。
+- 2026-10-23：PR #19 `5005083` 的 CI result / CodeRabbit success，3 条审查讨论已处理，合并为 `4a70602`；本地修复与远端门禁见[证据](docs/archive/reviews/2026-10-23-pr19-review-fixes.md)。
+- 2026-10-23：Phase 1 固定 Git objects 审计与离线回归的命令、结果和未覆盖项见[源码审计证据](docs/archive/reviews/2026-10-23-bootloader-source-audit.md)。
+- 既有依赖锁定与未验证边界见[依赖清单](docs/dependency-locks.md)；x86 安装保盘及健康检查见[回归记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
 
 ## 按需入口
 
-- ARC/ARM64：[docs/arc-integration.md](docs/arc-integration.md)、[docs/platforms.md](docs/platforms.md)
-- 工程规划：[实施计划](docs/implementation-plan.md)、[运行架构](docs/runtime-architecture.md)、[Mac 选型](docs/mac-container-evaluation.md)
-- 来源/治理：[docs/PROVENANCE.md](docs/PROVENANCE.md)、[docs/GOVERNANCE.md](docs/GOVERNANCE.md)、[docs/AI_RULES.md](docs/AI_RULES.md)
+- 自主源码：[源码审计](docs/bootloader-source-audit.md)、[研究入口](docs/arc-integration.md)
+- 架构/设备：[运行架构](docs/runtime-architecture.md)、[测试矩阵](docs/test-matrix.md)、[Mac 选型](docs/mac-container-evaluation.md)
+- 治理：[GOVERNANCE](docs/GOVERNANCE.md)、[AI_RULES](docs/AI_RULES.md)
