@@ -11,7 +11,7 @@ DockDSM 是独立维护的 DSM 虚拟化容器方案。Docker 管理 QEMU 进程
 
 **目标架构：控制层 → 平台配置与可选启动提供者 → 容器化 QEMU → DSM。**
 
-我们采用性能基线起步、逐步重构运行架构的路线：保留 Virtual DSM 与 ARM64 direct boot，ARC 作为后续独立启动提供者接入。ARC 与 DSM 是同一台 VM 内的不同启动阶段。设计决定见 [ADR 0006](docs/ADR/0006-runtime-profiles-and-container-first.md)。
+我们按源码准入 → 自主源码维护 → DockDSM Bootloader 品牌和接口 → x86 → ARM64 的顺序推进，保留 Virtual DSM 与 ARM64 direct boot。目标是由 DockDSM Bootloader 在同一台 QEMU VM 内向 DSM 交接，不创建嵌套虚拟机；Arc 仅作为上游源码来源记录。设计决定见 [ADR 0009](docs/ADR/0009-owned-bootloader-source.md)。
 
 > **当前还没有集成 ARC。** 现有代码可运行 Virtual DSM x86，并提供实验性的 DS124 ARM64 direct-boot 路径。ARM64 容器镜像、ARM64 DSM 与 ARM64 ARC 是三件不同的事；不能把已有 ARM64 路径当作 ARC 移植已经完成。
 

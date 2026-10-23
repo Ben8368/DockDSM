@@ -17,6 +17,15 @@ audit = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(audit)
 
 
+def fixture_git_environment():
+    """Keep fixture writes local, ignoring caller Git locations and configuration."""
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith('GIT_')}
+    env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull,
+               GIT_ALLOW_PROTOCOL='file', GIT_NO_LAZY_FETCH='1')
+    return env
+
+
 class SourceAuditTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='dockdsm source ')
@@ -45,6 +54,7 @@ class SourceAuditTests(unittest.TestCase):
 
     def git(self, *args):
         return subprocess.check_output(['git', '-C', str(self.repo), *args],
+                                       env=fixture_git_environment(),
                                        stderr=subprocess.PIPE, text=True).strip()
 
     def test_valid_audit_reports_binary_size_and_preserves_worktree(self):
@@ -86,7 +96,7 @@ class SourceAuditTests(unittest.TestCase):
     def test_shallow_clone_does_not_claim_complete_history(self):
         shallow = Path(self.tmp.name) / 'shallow'
         subprocess.run(['git', 'clone', '-q', '--depth=1', self.repo.as_uri(), str(shallow)],
-                       check=True, capture_output=True)
+                       check=True, capture_output=True, env=fixture_git_environment())
         result = audit.inventory(shallow, self.lock)
         self.assertTrue(result['local_history']['shallow'])
         self.assertFalse(result['local_history']['upstream_history_verified'])
@@ -95,10 +105,42 @@ class SourceAuditTests(unittest.TestCase):
         self.git('config', 'uploadpack.allowFilter', 'true')
         partial = Path(self.tmp.name) / 'partial'
         subprocess.run(['git', 'clone', '-q', '--filter=blob:none', '--no-checkout',
-                        self.repo.as_uri(), str(partial)], check=True, capture_output=True)
+                        self.repo.as_uri(), str(partial)], check=True, capture_output=True,
+                       env=fixture_git_environment())
         # A successful audit would mean Git silently fetched missing source blobs.
         with self.assertRaises((ValueError, subprocess.CalledProcessError)):
             audit.inventory(partial, self.lock)
+
+    def test_polluted_environment_preserves_callers_repository(self):
+        """Exercise setup, helper writes and both clones under foreign Git settings."""
+        caller = Path(self.tmp.name) / 'caller repository'
+        subprocess.run(['git', 'clone', '-q', self.repo.as_uri(), str(caller)],
+                       check=True, capture_output=True, env=fixture_git_environment())
+        (caller / 'untracked sentinel').write_bytes(b'keep caller data\n')
+        (caller / 'LICENSE').write_bytes(b'uncommitted caller changes\n')
+
+        def snapshot():
+            return {str(path.relative_to(caller)): path.read_bytes()
+                    for path in caller.rglob('*') if path.is_file()}
+
+        before = snapshot()
+        polluted = dict(os.environ, GIT_DIR=str(caller / '.git'),
+                        GIT_WORK_TREE=str(caller), GIT_COMMON_DIR=str(caller / '.git'),
+                        GIT_INDEX_FILE=str(caller / '.git/index'),
+                        GIT_OBJECT_DIRECTORY=str(caller / '.git/objects'),
+                        GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='core.bare',
+                        GIT_CONFIG_VALUE_0='true')
+        # Select only these tests so the child cannot recurse into this test.
+        selected = ['test_valid_audit_reports_binary_size_and_preserves_worktree',
+                    'test_shallow_clone_does_not_claim_complete_history',
+                    'test_partial_clone_cannot_fetch_missing_blobs']
+        result = subprocess.run(
+            [os.sys.executable, str(Path(__file__).resolve()),
+             *['SourceAuditTests.' + name for name in selected]],
+            env=polluted, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('Ran 3 tests', result.stderr)
+        self.assertEqual(before, snapshot(), 'fixture modified the caller repository')
 
     def test_inherited_git_environment_cannot_redirect_inspection(self):
         with mock.patch.dict(os.environ, {'GIT_DIR': '/missing', 'GIT_WORK_TREE': '/missing'}):

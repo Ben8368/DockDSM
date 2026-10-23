@@ -36,3 +36,23 @@ WSL 使用一次性 `/var/tmp/dockdsm-phase1-validation` clone（基于 `4a70602
 ## 未覆盖与回退
 
 未执行上游 `img-gen.sh` 或其他构建入口，未获取/修改 PAT、DSM 私有镜像、个人序列号或现有磁盘；未构建/发布组合 Bootloader 镜像。Linux x86 的 DSM L2/KVM L3、Mac ARM64 容器后端、RK3588 Docker-only 均未运行。没有新生产配置或数据迁移；撤回本工作包即可回到 PR #19 的临时研究入口，既有平台启动路径不变。
+
+## PR #20 审查修复验证
+
+审查基线为 `d4923c07998cd8a86b843e83e03d28ec05205939`：CI result / CodeRabbit 均 success，但有效的 fixture Git 环境隔离讨论尚未解决，README 开头仍使用 ADR 0006 的旧顺序。本次只修复这两项，不修改生产代码、源码锁、风险关闭条件或历史 ADR。
+
+- `tests/bootloader-source-audit.py`：helper 与所有 clone 显式使用清除继承 `GIT_*` 的环境，禁用系统/全局 Git 配置，仅允许本地 `file` transport。保留 PATH 等非 Git 环境。
+- 新用例在独立子进程中污染 Git dir/worktree/common-dir/index/object-dir 和配置注入，执行 fixture setup、helper 写入、shallow clone 与 partial clone；调用者仓库含已修改/未跟踪文件，测试前后逐文件（包括 `.git`）比较 bytes。
+- `readme.md`：介绍改为源码准入 → 自主源码维护 → DockDSM Bootloader 品牌和接口 → x86 → ARM64，引用 ADR 0009；保留来源和既有平台边界。
+
+Audit Report：🟡 本修复可验证，未发现新增生产或数据风险；RISK-006 保持开放，组件准入及 DSM L2/L3 仍不构成本轮完成项。
+
+| 环境 | 命令 | 结果 |
+| --- | --- | --- |
+| Windows / WSL | `python tests/bootloader-source-audit.py` / `python3 tests/bootloader-source-audit.py` | 各 11 项通过；污染环境子进程另运行 3 项，调用者仓库 bytes 不变 |
+| Windows | `python scripts/governance-docs-check.py`；`python tests/governance-docs.py`；`python tests/branding.py`；`python tests/ci-policy.py` | 治理检查、11 / 5 / 20 项回归通过 |
+| Windows / WSL | `python scripts/check-tree.py`；`python scripts/check-config.py`；`python scripts/git-hooks-test.py`（WSL 使用 python3） | 全部通过，hook 5 项通过；`git diff --check` 通过 |
+
+WSL 初次在 Windows worktree 运行 tree 检查因 `.git` 中 Windows 绝对路径不可解析而失败；改在一次性 `/var/tmp/dockdsm-phase1-validation` Linux clone 覆盖上述两个候选文件后通过。初次治理回归命令误写为不存在的 `tests/governance-docs-check.py`，按 CI 的 `tests/governance-docs.py` 重跑 11 项通过；均非放宽检查。Windows x64 / PowerShell 7.6.5 / Git 2.53 / Python 3.14，WSL Ubuntu-24.04 x86_64 / Git 2.43 / Python 3.12；本轮只探测 Docker client 29.9.0，未验证 daemon 或 KVM 初始化。
+
+本次没有合并授权；推送后需重新核验最新 HEAD 的 CI result、CodeRabbit、讨论和分支保护，等待维护者决定。
