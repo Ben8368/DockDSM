@@ -33,3 +33,4 @@ URL=https://example.invalid/synthetic.pat
 downloadPat "$tmp/downloaded.pat"
 [[ -s "$tmp/downloaded.pat" ]]
 echo 'Common PAT regression passed: mirror precedence/detection, local source preservation, existing retry arguments.'
+bash "$repo/tests/arm-mirror-regression.sh"

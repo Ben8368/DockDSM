@@ -609,6 +609,41 @@ class AdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'storage'):
             admission.evaluate(self.root, 'manifest.json', other.name)
 
+    def test_git_storage_does_not_require_junction_api(self):
+        """Keep ordinary offline inspection usable without Python 3.12's Path API."""
+        with mock.patch.object(Path, 'is_junction', create=True,
+                               side_effect=AssertionError('Python 3.12-only API used')):
+            self.assertFalse(self.run_check()['strict_pass'])
+
+    def test_git_storage_link_escape_fails_before_git_reads(self):
+        """Reject an external object-storage link before any Git command can use it."""
+        link = self.repo / '.git/objects/escaped-store'
+        try:
+            link.symlink_to(ROOT / '.git', target_is_directory=True)
+        except OSError:
+            if os.name != 'nt':
+                raise
+            subprocess.run(['cmd', '/c', 'mklink', '/J', str(link), str(ROOT / '.git')],
+                           check=True, capture_output=True)
+        self.addCleanup(link.unlink if link.is_symlink() else link.rmdir)
+        with mock.patch.object(admission.audit, 'inventory', side_effect=AssertionError('Git reader reached')):
+            with self.assertRaisesRegex(ValueError, 'storage link outside'):
+                self.run_check()
+
+    def test_resolved_storage_escape_needs_no_link_classification(self):
+        """Model a junction resolving outside root without reporting a POSIX symlink."""
+        entry = (self.repo / '.git/objects/redirected-store').resolve()
+        entry.mkdir()
+        original_resolve = Path.resolve
+        def resolve(path, *args, **kwargs):
+            """Model only this entry's redirected target; keep all other filesystem reads real."""
+            return ROOT / '.git' if path == entry else original_resolve(path, *args, **kwargs)
+        self.assertFalse(entry.is_symlink())
+        with mock.patch.object(Path, 'resolve', autospec=True, side_effect=resolve):
+            with mock.patch.object(admission.audit, 'inventory', side_effect=AssertionError('Git reader reached')):
+                with self.assertRaisesRegex(ValueError, 'storage link outside'):
+                    self.run_check()
+
     def test_git_config_include_is_rejected(self):
         """External Git configuration must not enter a supposedly isolated offline inspection."""
         with (self.repo / '.git/config').open('a', encoding='utf-8') as f:
