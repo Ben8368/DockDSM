@@ -8,7 +8,11 @@
 
 采用 AuxXxilium/arc commit `99195dbdf4e0a21c5304ddb06e07dc57419679bc`，Git tree `fd34c2ca01dc6f97a81dbd462d421396e3606928`。源码证据、SHA256、条目数和未锁定依赖由 [source-lock.json](../research/bootloader/source-lock.json)维护，避免复制一份哈希表。
 
+运行审计与校验前，请先确认本地 Python 环境为 3.11 或更新版本且 Git 可执行：
+
 ```bash
+python3 --version
+git --version
 python3 scripts/audit-bootloader-source.py --source vendor/arc
 python3 tests/bootloader-source-audit.py
 ```
@@ -60,7 +64,11 @@ python3 tests/bootloader-source-audit.py
 
 完整远端 tree 元数据保存在[对象索引](../research/bootloader/evidence/remote-trees-2026-10-23.json)，离线重建 Git tree SHA-1 并校验选定文本 blob/SHA256；未下载 release 资产。所有已观测固定二进制及 kernel 模板的大小/SHA256 在 manifest evidence 中，不再复制表格。远端 release API 的资产 digest 仅是上游声明，不等于本地验算，也不是批准摘要。
 
+运行组件准入检查前，请先确认本地 Python 环境为 3.11 或更新版本且 Git 可执行：
+
 ```bash
+python3 --version
+git --version
 python3 scripts/check-bootloader-admission.py --check
 python3 scripts/check-bootloader-admission.py --strict
 python3 tests/bootloader-component-admission.py
