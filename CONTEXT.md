@@ -28,7 +28,7 @@
 
 ## 最近验证
 
-- 2026-10-23：组件来源复核、离线门禁和故障注入回归见[组件准入记录](docs/archive/reviews/2026-10-23-bootloader-component-admission.md)；没有组件获准迁入/组合构建/分发。
+- 2026-10-23：组件来源再核验、产物/收据绑定加固及离线故障注入回归见[组件准入记录](docs/archive/reviews/2026-10-23-bootloader-component-admission.md)；没有组件获准迁入/组合构建/分发。
 
 - 2026-10-23：PR #19 `5005083` 的 CI result / CodeRabbit success，3 条审查讨论已处理，合并为 `4a70602`；本地修复与远端门禁见[证据](docs/archive/reviews/2026-10-23-pr19-review-fixes.md)。
 - 2026-10-23：Phase 1 固定 Git objects 审计与离线回归的命令、结果和未覆盖项见[源码审计证据](docs/archive/reviews/2026-10-23-bootloader-source-audit.md)。

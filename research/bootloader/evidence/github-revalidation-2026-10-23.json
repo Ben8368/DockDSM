@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-23T09:25:22.487236+00:00",
+  "method": "Read-only GitHub metadata revalidation; no release assets downloaded, no upstream scripts executed. This receipt does not approve any component.",
+  "references": {
+    "research/bootloader/evidence/github-observations-2026-10-23.json": "d01a8c62a8d0259b9807718183ef19de6a7f168fd0aec687337ea98107d04b49",
+    "research/bootloader/source-lock.json": "41bdac3a3044f96912d1944aa5788619117d85fe110fd8ead7dcf8bf136f8524"
+  },
+  "commit_tree_revalidation": [
+    {
+      "reference": "research/bootloader/source-lock.json#/upstream",
+      "url": "https://api.github.com/repos/AuxXxilium/arc/git/commits/99195dbdf4e0a21c5304ddb06e07dc57419679bc",
+      "matched": true,
+      "response_sha256": "1135c897c311effcd6e275625133d36128970db6dfb08a329b45b71001738dcc"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-addons",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-addons/git/commits/51ff78870bb273903e8446d5232d15d3b4e36d9b",
+      "matched": true,
+      "response_sha256": "dcb5d9bb32df214ad3e921c9384ad8fe9661a476fa93b6201bbe86bc24b22bd4"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-modules",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-modules/git/commits/dc4dd06bd497645608ab9d95a4d0f90160e2b8f7",
+      "matched": true,
+      "response_sha256": "d533ad29a00d7948972776294ead953d5bec3a5aa5467eb6bfbef73fc5de3e0f"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-lkm",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-lkm/git/commits/262dfc061ba9d9c5b3f54f34d0b3bd5c9b27e386",
+      "matched": true,
+      "response_sha256": "81e98b9251ad55beaa11955cade015cc91a7c257e20baf0befc5240f969605e6"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-configs",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-configs/git/commits/ae3eb49e9b618e10dcc06e766c0065917adc233b",
+      "matched": true,
+      "response_sha256": "ed50723b03501a0e514c00f4e5de84ca38861c16a4fe5d82ee286a9996a88cdc"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-patches",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-patches/git/commits/6cc61ba102091c0bfab132d200fff2dc6dc946fb",
+      "matched": true,
+      "response_sha256": "27737da44ebce8fe7f890e655ab258d9aa139e1a1f6457ff20417b8f65b7c411"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-custom",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-custom/git/commits/eb6f994e45783b2b599eda77326b0db617ef8210",
+      "matched": true,
+      "response_sha256": "0b4cc8e7ba73e0e89d5dc9e29cdd6de2d090999f3fac0905129c10a3ed6aac60"
+    },
+    {
+      "reference": "research/bootloader/evidence/github-observations-2026-10-23.json#/repositories/arc-theme",
+      "url": "https://api.github.com/repos/AuxXxilium/arc-theme/git/commits/8e9fb428230e250d41b355693a3e45344918f09e",
+      "matched": true,
+      "response_sha256": "20ab5abce9848dc6dd0c2d143eed44f4c6284366c20a5109ee5e89a63f5e51b3"
+    }
+  ],
+  "buildroot_access": {
+    "arc-buildroot-essential": {
+      "checks": [
+        {
+          "client": "gh configured session; scopes not inferred",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-essential",
+          "exit_code": 1,
+          "response": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
+            "status": "404"
+          }
+        },
+        {
+          "client": "gh configured session; scopes not inferred",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-essential/tags?per_page=5",
+          "exit_code": 1,
+          "response": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest/repos/repos#list-repository-tags",
+            "status": "404"
+          }
+        },
+        {
+          "client": "gh configured session; scopes not inferred",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-essential/releases?per_page=5",
+          "exit_code": 1,
+          "response": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest/releases/releases#list-releases",
+            "status": "404"
+          }
+        },
+        {
+          "client": "unauthenticated HTTPS GET",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-essential",
+          "status": 404,
+          "final_url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-essential"
+        },
+        {
+          "client": "unauthenticated HTTPS GET",
+          "url": "https://github.com/AuxXxilium/arc-buildroot-essential",
+          "status": 404,
+          "final_url": "https://github.com/AuxXxilium/arc-buildroot-essential"
+        }
+      ],
+      "conclusion": "Not publicly accessible at the recorded URL. Repeated 404s do not distinguish deletion, private visibility, rename or insufficient resource permissions; no source closure established."
+    },
+    "arc-buildroot-evo": {
+      "checks": [
+        {
+          "client": "gh configured session; scopes not inferred",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-evo",
+          "exit_code": 1,
+          "response": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
+            "status": "404"
+          }
+        },
+        {
+          "client": "gh configured session; scopes not inferred",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-evo/tags?per_page=5",
+          "exit_code": 1,
+          "response": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest/repos/repos#list-repository-tags",
+            "status": "404"
+          }
+        },
+        {
+          "client": "gh configured session; scopes not inferred",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-evo/releases?per_page=5",
+          "exit_code": 1,
+          "response": {
+            "message": "Not Found",
+            "documentation_url": "https://docs.github.com/rest/releases/releases#list-releases",
+            "status": "404"
+          }
+        },
+        {
+          "client": "unauthenticated HTTPS GET",
+          "url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-evo",
+          "status": 404,
+          "final_url": "https://api.github.com/repos/AuxXxilium/arc-buildroot-evo"
+        },
+        {
+          "client": "unauthenticated HTTPS GET",
+          "url": "https://github.com/AuxXxilium/arc-buildroot-evo",
+          "status": 404,
+          "final_url": "https://github.com/AuxXxilium/arc-buildroot-evo"
+        }
+      ],
+      "conclusion": "Not publicly accessible at the recorded URL. Repeated 404s do not distinguish deletion, private visibility, rename or insufficient resource permissions; no source closure established."
+    }
+  },
+  "owner_buildroot_search": {
+    "url": "https://api.github.com/users/AuxXxilium/repos?per_page=100",
+    "pages": 1,
+    "public_repositories_seen": 40,
+    "matches": [],
+    "limitation": "Public owner-name search only; does not rule out private repositories, another owner or renamed sources."
+  }
+}

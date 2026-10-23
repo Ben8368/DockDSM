@@ -162,15 +162,27 @@ def validate(manifest, lock):
                 fail('unknown source/license evidence reference')
         if not isinstance(component['artifacts'], list):
             fail('artifact list required')
+        artifact_paths = set()
         for artifact in component['artifacts']:
             fields(artifact, 'path kind evidence source_relation')
             text(artifact['path'])
+            if artifact['path'] in artifact_paths:
+                fail('duplicate artifact path')
+            artifact_paths.add(artifact['path'])
             if artifact['kind'] not in ('pinned_blob', 'unlocked_release', 'placeholder'):
                 fail('unknown artifact kind')
             if artifact['evidence'] is not None and artifact['evidence'] not in component['evidence']:
                 fail('unknown artifact evidence')
             if artifact['kind'] in ('pinned_blob', 'placeholder') and artifact['evidence'] is None:
                 fail('pinned artifact requires evidence')
+            if artifact['kind'] in ('pinned_blob', 'placeholder'):
+                relative(artifact['path'])
+                proof = component['evidence'][artifact['evidence']]
+                if proof['kind'] not in ('locked', 'git') or proof['path'] != artifact['path']:
+                    fail('artifact must reference its exact pinned Git blob')
+                size = lock['evidence'][proof['path']]['bytes'] if proof['kind'] == 'locked' else proof['bytes']
+                if artifact['kind'] == 'pinned_blob' and size == 0:
+                    fail('empty artifact is a placeholder, not a pinned binary')
             text(artifact['source_relation'])
         requirements = {r for group in REQUIREMENTS.values() for r in group}
         if not isinstance(component['conditions'], dict) or set(component['conditions']) != requirements:
@@ -300,6 +312,23 @@ def verify_repository_boundary(root, source):
                 fail('Git storage link outside workspace')
 
 
+def verify_receipt_graph(edges):
+    """Reviewed conditions cannot use one another as circular evidence."""
+    visited, active = set(), set()
+    def visit(eid):
+        if eid in active:
+            fail('circular verification receipt inputs')
+        if eid in visited:
+            return
+        active.add(eid)
+        for dependency in edges.get(eid, ()):
+            visit(dependency)
+        active.remove(eid)
+        visited.add(eid)
+    for eid in edges:
+        visit(eid)
+
+
 def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
     root = root.resolve(strict=True)
     manifest = load(local(root, manifest_path))
@@ -332,6 +361,9 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
             key = origin['repository'].rsplit('/', 1)[-1]
             if key not in observations['unavailable']:
                 fail('unresolved origin has no observation')
+            unavailable = observations['unavailable'][key]
+            if not any(item['url'] == origin['repository'] for item in unavailable['public']):
+                fail('unresolved origin disagrees with observed repository URL')
             identity = None
         if origin['identity'] != 'unresolved':
             paths = source_paths if origin['identity'] == 'source-lock' else [row[0] for row in
@@ -373,6 +405,7 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
             return (condition['result'] == 'verified' and bool(condition['evidence'])
                     and all(e in verified for e in condition['evidence']))
         # A status/result edit cannot promote a URL/hash into a review or rebuild receipt.
+        receipt_edges = {}
         for name, condition in conditions.items():
             if condition['result'] != 'verified':
                 continue
@@ -393,9 +426,11 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                     fail('condition receipt inputs missing or circular')
                 text(receipt['reviewer'])
                 text(receipt['explanation'])
+                receipt_edges[eid] = receipt['inputs']
                 receipts.append(receipt)
             if not receipts:
                 fail('verified condition lacks a subject-bound review/verification receipt')
+        verify_receipt_graph(receipt_edges)
         source_ok = (component['source']['availability'] == 'complete'
                      and bool(component['source']['evidence'])
                      and bool(component['license']['evidence'])

@@ -228,6 +228,81 @@ class AdmissionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.run_check()
 
+    def register_fixture_artifact(self):
+        component = self.manifest['components'][0]
+        path = 'binary with spaces'
+        raw = (self.repo / path).read_bytes()
+        component['evidence']['binary'] = dict(
+            kind='git', path=path, sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw),
+            locator=self.lock['upstream']['repository'] + '/blob/' + self.lock['upstream']['revision'] + '/' + path)
+        component['artifacts'] = [dict(path=path, kind='pinned_blob', evidence='binary',
+                                       source_relation='Synthetic artifact only')]
+        return component
+
+    def test_pinned_artifact_is_bound_to_exact_source_blob(self):
+        self.approve()
+        component = self.register_fixture_artifact()
+        self.assertTrue(self.run_check()['strict_pass'])
+        component['artifacts'][0]['evidence'] = 'license'
+        with self.assertRaisesRegex(ValueError, 'artifact'):
+            self.run_check()
+
+    def test_local_receipt_cannot_impersonate_a_pinned_artifact(self):
+        self.approve()
+        component = self.register_fixture_artifact()
+        raw = (self.repo / 'binary with spaces').read_bytes()
+        component['evidence']['binary'] = self.evidence('binary with spaces', raw)
+        with self.assertRaisesRegex(ValueError, 'artifact'):
+            self.run_check()
+
+    def test_pinned_artifact_path_cannot_escape_or_be_duplicated(self):
+        self.approve()
+        component = self.register_fixture_artifact()
+        artifact = component['artifacts'][0]
+        for path in ('../private', '/etc/passwd', 'C:/private', 'absent'):
+            with self.subTest(path=path):
+                artifact['path'] = path
+                with self.assertRaises(ValueError):
+                    self.run_check()
+        artifact['path'] = 'binary with spaces'
+        component['artifacts'].append(copy.deepcopy(artifact))
+        with self.assertRaisesRegex(ValueError, 'artifact'):
+            self.run_check()
+
+    def test_placeholder_cannot_be_promoted_to_pinned_binary(self):
+        manifest = admission.load(ROOT / admission.MANIFEST)
+        lock = admission.load(ROOT / manifest['source_lock'])
+        grub = next(c for c in manifest['components'] if c['id'] == 'grub')
+        grub['artifacts'][0]['kind'] = 'pinned_blob'
+        with self.assertRaisesRegex(ValueError, 'artifact'):
+            admission.validate(manifest, lock)
+
+    def test_verification_receipts_cannot_form_an_evidence_cycle(self):
+        self.approve()
+        component = self.manifest['components'][0]
+        for name, other in (('source_complete', 'license_scope'), ('license_scope', 'source_complete')):
+            eid = 'review-' + name
+            path = component['evidence'][eid]['path']
+            receipt = admission.load(self.root / path)
+            receipt['inputs'] = ['review-' + other]
+            component['evidence'][eid] = self.evidence(path, json.dumps(receipt).encode())
+        with self.assertRaisesRegex(ValueError, 'circular'):
+            self.run_check()
+
+    def test_unavailable_origin_must_match_observed_repository_url(self):
+        component = self.manifest['components'][0]
+        component['origin'] = dict(repository='https://github.com/expected/unavailable',
+                                   paths=['/'], identity='unresolved')
+        component['source']['availability'] = 'unavailable'
+        component['admission']['status'] = 'BLOCKED'
+        observation = dict(repositories={}, unavailable={'unavailable': {
+            'public': [dict(url=component['origin']['repository'], status=404)]}})
+        (self.root / 'observations.json').write_text(json.dumps(observation), encoding='utf-8')
+        self.assertFalse(self.run_check()['strict_pass'])
+        component['origin']['repository'] = 'https://github.com/impostor/unavailable'
+        with self.assertRaisesRegex(ValueError, 'origin'):
+            self.run_check()
+
     def test_source_identity_mutation_fails(self):
         self.lock['upstream']['revision'] = '0' * 40
         with self.assertRaises((ValueError, subprocess.CalledProcessError)):

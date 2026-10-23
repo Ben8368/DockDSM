@@ -39,6 +39,14 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 
 三个 gate 分开：source_import 需要完整本地固定源码及范围/许可/权利证据；combined_build 还需固定工具链、无未锁依赖及重建关联；distribution 还需分发审查与主锁允许。手填 APPROVED 或 verified+LICENSE 不能通过，真实批准需组件/condition/identity/input 绑定的独立收据。严格模式没有例外绕过开关。
 
+## 同日重复请求复核与门禁加固
+
+- 再次 `git fetch origin master` 和查询 PR #20，确认 master 未变。接续时工作树干净，已有同范围的开放 PR #21（不是已合并旧分支），其 merge-base 正是已确认 master；复用这一独立 PR，不创建重复或 stacked PR，不改写既有提交。
+- 重新只读查询主仓库及七个组件的固定 `/git/commits/<sha>`：返回 commit/tree 全部吻合原锁/收据。Essential/Evo 各重查已配置 gh 会话的仓库/tags/releases 及匿名 API/Web，仍均为 404；公开 owner 目录 40 仓库无 buildroot 名称匹配。新[复核收据](../../../research/bootloader/evidence/github-revalidation-2026-10-23.json)以文件摘要/JSON pointer 引用原事实源，不维护第二套组件状态，也不声称排除私有/迁移/权限可能。
+- 发现并复现原门禁的四类证据绑定缺口：以 LICENSE 摘要冒充其他产物、本地文件冒充固定 Git 产物、两条 verified 收据互相引用、不同 owner 同名仓库冒充不可访问来源。四个新增用例修复前均因未拒绝伪证据而失败，修复后通过；另补重复/越界产物路径、零字节占位晋级用例。
+- 门禁现将每个固定产物绑定到同路径 Git blob 与已有摘要/大小，并拒绝重复路径、空占位晋级和 verified 收据输入环；unresolved 来源必须精确匹配观测 URL，不只比较仓库末段。没有调整状态或放宽 strict，没有改变可信 Git reader 或生产路径。
+- 原生 Windows 全量 35 tests、WSL 全量及 `unshare -Urn` 无网络 namespace 全量 35 tests 通过。实库 `--check`=0 / `--strict`=2，三个 gate 均无获准组件。Windows 首次辅助 JSON 捕获因子进程默认 GBK、父进程按 UTF-8 解码失败；显式 `-X utf8`/`PYTHONUTF8=1` 后复测通过，无须修改工具或降级检查。
+
 ## 🚦 Audit Report
 
 **总体评价：🟡 可通行（仅本工作包；迁移/组合构建/分发保持阻断）**
@@ -51,7 +59,7 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 
 | 命令（仓库根） | 结果 |
 | --- | --- |
-| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 最终 29 tests（Windows 完整运行 28 tests 后另跑新增状态测试；WSL 最终 29 tests 完整通过） |
+| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 复核加固后 35 tests，Windows/WSL 均完整通过 |
 | `python tests/bootloader-source-audit.py` | 11 tests 通过 |
 | `python scripts/check-bootloader-admission.py --check` | exit 0；如实报告阻断 |
 | `python scripts/check-bootloader-admission.py --strict` | exit 2，预期拒绝；非回归失败 |
