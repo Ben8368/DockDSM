@@ -71,6 +71,12 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 - 另加四项测试：非 source/license/artifact 的独立条件输入改绑、build 契约变化、旧收据拒绝，以及明确重新签发合成收据后的范围变更正例。新增七项使准入回归达到 **52 tests**；正常多级无环引用以叶到根生成固定输入摘要，原同内容 alias、跨条件/多级环及伪造哈希测试继续通过。
 - 签名/审查身份认证仍属于明确的人工信任边界：能同时伪造全部收据文件和清单的写权限攻击不由摘要一致性解决；工具不声明权利人许可。本次只阻断“保留原收据 bytes、修改 manifest 就复用批准”的已证实漏洞，不生成实际 APPROVED。
 
+### 同轮测试审查补充：精确拒绝原因
+
+- `a0df5a0` 的[inline 意见](https://github.com/Ben8368/DockDSM/pull/21#discussion_r4358681568)指出四个 replay 用例的裸 `assertRaises(ValueError)` 可能被无关失败满足。范围扩大、直接输入改绑和产物替换现明确要求 `subject scope`；旧版本测试分别要求“字段完整但 schema=1”触发 `subject/identity mismatch`，以及原 schema 1 缺少绑定字段触发 `schema fields mismatch`。
+- 该意见称原替换产物不是有效 Git 证据，实际复核不成立：setUp 将 `license` 设为 `locked`，由 `audit.inventory` 对精确 Git blob 验证；仅收紧断言即通过，证明已到达主体绑定检查。因此保留合法夹具，未为迎合建议增加另一份重复 Git 证据。测试数量仍为 52，生产校验器及全部组件事实均未变。
+- 对本次断言执行额外 mutation：仅在内存加载的校验器副本把 `if receipt['subject_sha256'] != reviewed_subject:` 改为 `if False:`，不编辑源文件。三个范围/输入/产物测试全部 FAIL；输入改绑落到另一条 `input content identity` 拒绝时也因不匹配 `subject scope` 失败，证明不再由其他错误冒充主体保护。未变异的 Windows/WSL/断网 52 项与源码审计 11 项完整通过，check=0 / strict=2。
+
 ## 🚦 Audit Report
 
 **总体评价：🟡 可通行（仅本工作包；迁移/组合构建/分发保持阻断）**

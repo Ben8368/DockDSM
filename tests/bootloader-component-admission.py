@@ -448,7 +448,7 @@ class AdmissionTests(unittest.TestCase):
         self.approve()
         self.assertTrue(self.run_check()['strict_pass'])
         self.manifest['components'][0]['origin']['paths'] = ['/']
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'subject scope'):
             self.run_check()
 
     def test_existing_receipts_cannot_approve_rebound_input_bytes(self):
@@ -456,7 +456,7 @@ class AdmissionTests(unittest.TestCase):
         self.approve()
         component = self.manifest['components'][0]
         component['evidence']['license'] = self.evidence('replacement-license', b'different valid evidence')
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'subject scope'):
             self.run_check()
 
     def test_existing_receipts_cannot_approve_replacement_artifact(self):
@@ -465,7 +465,7 @@ class AdmissionTests(unittest.TestCase):
         component = self.register_fixture_artifact()
         self.assertTrue(self.run_check()['strict_pass'])
         component['artifacts'] = [dict(path='LICENSE', kind='pinned_blob', evidence='license', source_relation='substituted subject')]
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'subject scope'):
             self.run_check()
 
     def test_reviewed_condition_input_cannot_be_rebound_independently(self):
@@ -499,9 +499,12 @@ class AdmissionTests(unittest.TestCase):
         path = component['evidence'][eid]['path']
         receipt = admission.load(self.root / path)
         receipt['schema_version'] = 1
+        component['evidence'][eid] = self.evidence(path, json.dumps(receipt).encode())
+        with self.assertRaisesRegex(ValueError, 'subject/identity mismatch'):
+            self.run_check()
         del receipt['subject_sha256'], receipt['input_digests']
         component['evidence'][eid] = self.evidence(path, json.dumps(receipt).encode())
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'schema fields mismatch'):
             self.run_check()
 
     def test_new_receipts_can_authorize_deliberately_reviewed_scope(self):
