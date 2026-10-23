@@ -47,6 +47,15 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 - 门禁现将每个固定产物绑定到同路径 Git blob 与已有摘要/大小，并拒绝重复路径、空占位晋级和 verified 收据输入环；unresolved 来源必须精确匹配观测 URL，不只比较仓库末段。没有调整状态或放宽 strict，没有改变可信 Git reader 或生产路径。
 - 原生 Windows 全量 35 tests、WSL 全量及 `unshare -Urn` 无网络 namespace 全量 35 tests 通过。实库 `--check`=0 / `--strict`=2，三个 gate 均无获准组件。Windows 首次辅助 JSON 捕获因子进程默认 GBK、父进程按 UTF-8 解码失败；显式 `-X utf8`/`PYTHONUTF8=1` 后复测通过，无须修改工具或降级检查。
 
+## PR #21 最终收据别名复核
+
+- 复核起点 `ba874e45f616e6664d9924e315fb2d73c4405fdd`，工作树干净，远端分支一致、PR 仍 OPEN，master 仍为已记录基线。该 HEAD 的 CI result 与 CodeRabbit 均 success，但 [CodeRabbit 正文审查](https://github.com/Ben8368/DockDSM/pull/21#pullrequestreview-5626519687)发现 evidence ID 可为相同收据内容的别名；没有可标记 resolved 的行内讨论，处理证据回复于同一 PR。
+- **红灯复现：** 修复实现前运行 `python3 tests/bootloader-component-admission.py AdmissionTests.test_receipt_self_alias_with_different_id_at_same_path_fails AdmissionTests.test_receipt_self_alias_with_different_path_and_same_bytes_fails AdmissionTests.test_cross_condition_cycle_through_receipt_aliases_fails AdmissionTests.test_multilevel_receipt_alias_cycle_fails`。四项均 FAIL / `ValueError not raised`：旧实现漏检同路径不同 ID、同内容不同路径、两个条件相互引用的别名，以及三个条件的多级别名循环。
+- **修复边界：** 已读取的 local/Git bytes 计算 SHA256，匹配声明及大小后才进入 verified 内容身份表；locked 摘要仅在现有 `audit.inventory` 已校验固定对象后使用。收据直接解析已经验算的本次 bytes 快照，不二次读文件。逐输入拒绝与收据自身摘要相同的别名；条件收据图改用已验证 SHA256 建边，以原有 DFS 检出跨条件/多级循环。缺失输入、直接自引用、未验证摘要、路径、源码身份和原有 gate 检查均保留。
+- **新增七项回归：** 上述四项加上修改任一端声明哈希仍拒绝、缺失/未验证/直接自引用输入仍拒绝、正常多级无环引用和普通独立证据同内容可通过。未把任何 JSON 都自动认作评审收据：图只包含已按 component/condition/source identity 验证的活动条件收据，普通已验算材料仍可作为叶节点。可信写入者伪造全部实质证据/审查身份仍不在摘要一致性工具的保证内。
+- **docstring：** [既有警告](https://github.com/Ben8368/DockDSM/pull/21#issuecomment-6361394087)报 8.96% / 阈值 80%，是 CodeRabbit pre-merge 文档警告；当时没有阻止 CI result 或 commit status 成功，也不是本地执行失败。为校验器公开入口、路径/Git/摘要/图的信任边界及故障注入函数补充参数语义、失败条件和副作用；不修改 CodeRabbit 配置或 CI。AST 实测 `check-bootloader-admission.py` 19/19、`audit-bootloader-source.py` 3/3、组件测试 52/52 及新增 CI 策略测试 1/1 有 docstring；这是本地统计，不冒充远端工具输出。
+- **绿灯验证：** Windows PowerShell 7.6.5 / AMD64 / Python 3.14.2，WSL Ubuntu 24.04 / Linux x86_64 / Python 3.12.3（均重新探测）。Windows/WSL 全量 42 项准入测试、11 项源码审计通过；WSL `unshare -Urn` 的 42 项断网回归通过。`--check`=0 / `--strict`=2，所有 gate 仍拒绝。其余实际命令及结果见下表；组件清单、source-lock、RISK-006 及生产路径未修改，不迁移源码、不合并、不发布。
+
 ## 🚦 Audit Report
 
 **总体评价：🟡 可通行（仅本工作包；迁移/组合构建/分发保持阻断）**
@@ -59,11 +68,11 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 
 | 命令（仓库根） | 结果 |
 | --- | --- |
-| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 复核加固后 35 tests，Windows/WSL 均完整通过 |
+| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 最终别名加固后 42 tests，Windows/WSL 均完整通过 |
 | `python tests/bootloader-source-audit.py` | 11 tests 通过 |
 | `python scripts/check-bootloader-admission.py --check` | exit 0；如实报告阻断 |
 | `python scripts/check-bootloader-admission.py --strict` | exit 2，预期拒绝；非回归失败 |
-| WSL `unshare -Urn env PYTHONDONTWRITEBYTECODE=1 python3 tests/bootloader-component-admission.py` | 独立无网络 namespace 中全部通过 |
+| WSL `unshare -Urn env PYTHONDONTWRITEBYTECODE=1 python3 tests/bootloader-component-admission.py` | 独立无网络 namespace 中 42 tests 通过 |
 | `python scripts/governance-docs-check.py` / `python tests/governance-docs.py` | 通过 |
 | `python tests/ci-policy.py` / `python tests/branding.py` | 最终 21 / 5 tests 通过 |
 | `python scripts/check-config.py` / `python scripts/check-tree.py` / `git diff --check` | 通过（包含暂存新增文件） |

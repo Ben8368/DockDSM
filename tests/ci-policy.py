@@ -233,6 +233,7 @@ class WiringTests(unittest.TestCase):
         self.assertFalse((ROOT / '.github/workflows/hub.yml').exists())
 
     def test_admission_regression_runs_on_native_matrix(self):
+        """Keep offline regression on both native architectures without making honest strict holds fail CI."""
         job = workflow('test.yml')['jobs']['tests']
         steps = [step.get('run', '') for step in job['steps']]
         self.assertTrue(any('python3 tests/bootloader-component-admission.py' in step for step in steps))

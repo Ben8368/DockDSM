@@ -28,25 +28,30 @@ REQUIREMENTS = {
 
 
 def fail(message):
+    """Reject an invalid claim with ValueError; only the CLI boundary sanitizes diagnostics."""
     raise ValueError(message)
 
 
 def fields(value, names):
+    """Require exactly the named JSON object fields, rejecting omissions and unknown extensions."""
     if not isinstance(value, dict) or set(value) != set(names.split()):
         fail('schema fields mismatch: ' + names)
 
 
 def text(value):
+    """Reject empty or non-string claims rather than coercing untrusted schema values."""
     if not isinstance(value, str) or not value.strip():
         fail('nonempty text required')
 
 
 def digest(value, length=64):
+    """Require a lowercase hexadecimal identity of the specified length; does not verify bytes."""
     if not isinstance(value, str) or not re.fullmatch('[0-9a-f]{' + str(length) + '}', value):
         fail('invalid digest')
 
 
 def strings(value, allow_empty=True):
+    """Validate distinct nonempty text entries, optionally requiring at least one proof reference."""
     if not isinstance(value, list) or (not value and not allow_empty):
         fail('text list required')
     for item in value:
@@ -56,6 +61,10 @@ def strings(value, allow_empty=True):
 
 
 def relative(value):
+    """Return a safe POSIX-style workspace-relative path.
+
+    Reject traversal, absolute/Windows paths, empty segments and alternate streams
+    before callers perform file or Git reads; this function performs no I/O."""
     text(value)
     if (any(c in value for c in ('\\', ':', '\x00')) or value.startswith('/')
             or any(p in ('', '.', '..') for p in value.split('/'))):
@@ -64,7 +73,10 @@ def relative(value):
 
 
 def local(root, value):
-    """No absolute paths, traversal, NTFS streams, symlinks/junction escapes."""
+    """Resolve a referenced file strictly inside the caller-authorized workspace root.
+
+    Path syntax, symlink/junction escapes and non-files are rejected before content
+    reads. Resolution inspects filesystem metadata only; OS errors propagate."""
     relative(value)
     candidate = root / value
     resolved = candidate.resolve(strict=True)
@@ -74,6 +86,7 @@ def local(root, value):
 
 
 def pairs(items):
+    """Reject duplicate JSON keys so a later value cannot silently replace a security claim."""
     result = {}
     for key, value in items:
         if key in result:
@@ -83,11 +96,15 @@ def pairs(items):
 
 
 def load(path):
+    """Read UTF-8 JSON from an already-authorized Path, preserving duplicate-key rejection."""
     return json.loads(path.read_text(encoding='utf-8'), object_pairs_hook=pairs)
 
 
 def validate(manifest, lock):
-    """Validate the closed schema before opening any evidence or Git repository."""
+    """Validate the closed manifest schema and source-lock references before evidence I/O.
+
+    This checks types, paths, coverage and claim structure, not source completeness
+    or legal permission. Malformed or contradictory entries raise ValueError."""
     fields(manifest, 'schema_version source_lock observations baseline_mapping components')
     if type(manifest['schema_version']) is not int or manifest['schema_version'] != 1:
         fail('unsupported manifest schema')
@@ -209,7 +226,10 @@ def validate(manifest, lock):
 
 
 def tree_identity(rows):
-    """Reconstruct recursive Git trees from metadata; never claim that blobs exist."""
+    """Rebuild a Git tree identity from captured path/mode/OID/size rows.
+
+    Reject invalid rows, duplicates and missing or inconsistent parent trees.
+    This verifies tree structure only, not delivery of every referenced blob."""
     children = {}
     expected = {}
     for path, mode, oid, size in rows:
@@ -223,6 +243,7 @@ def tree_identity(rows):
         parent, _, name = path.rpartition('/')
         children.setdefault(parent, []).append((name, mode, oid))
     def build(directory):
+        """Reconstruct one directory object and reject inconsistent child tree identities."""
         raw = b''
         for name, mode, oid in sorted(children.get(directory, []), key=lambda row: (row[0] + ('/' if row[1] == '040000' else '')).encode('utf-8')):
             path = directory + '/' + name if directory else name
@@ -237,7 +258,11 @@ def tree_identity(rows):
 
 
 def verify_observations(observations, root=ROOT):
-    """Verify remote tree identities and captured texts, not a complete source delivery."""
+    """Verify captured remote tree identities and selected text blobs without networking.
+
+    The caller supplies an authorized workspace root for the inventory file.
+    Digest/size/structure mismatches fail closed; valid metadata is not a complete
+    source delivery, binary rebuild proof or permission to distribute."""
     if not isinstance(observations, dict) or not isinstance(observations.get('repositories'), dict):
         fail('invalid observation receipt')
     if not observations['repositories']:
@@ -269,6 +294,11 @@ def verify_observations(observations, root=ROOT):
 
 
 def verify_repository_boundary(root, source):
+    """Inspect Git storage boundaries before invoking the trusted read-only Git reader.
+
+    The selected checkout, gitdir and common storage must stay inside root.
+    Reject external links, alternates and config includes that could redirect
+    reads or activate unreviewed configuration. Reads metadata/config only."""
     if not source.resolve(strict=True).is_relative_to(root.resolve()):
         fail('source outside workspace')
     # gitdir/commondir and alternates can otherwise bypass filesystem path checks.
@@ -313,9 +343,15 @@ def verify_repository_boundary(root, source):
 
 
 def verify_receipt_graph(edges):
-    """Reviewed conditions cannot use one another as circular evidence."""
+    """Reject cycles between verified condition receipts using SHA256 content identities.
+
+    The caller must hash and validate all bytes before passing edges: keys identify
+    active review receipts, values identify their verified inputs. Equal-content
+    evidence aliases share a node; ordinary proof blobs are leaves. No file reads,
+    networking or mutation occur here; a cycle raises ValueError."""
     visited, active = set(), set()
     def visit(eid):
+        """Traverse one verified content node, detecting a back edge through any alias."""
         if eid in active:
             fail('circular verification receipt inputs')
         if eid in visited:
@@ -330,6 +366,12 @@ def verify_receipt_graph(edges):
 
 
 def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
+    """Evaluate all component gates from existing files and fixed Git objects, without writes.
+
+    root is the caller-authorized workspace; manifest_path and source_path are
+    untrusted relative references. Evidence is hashed before use and receipts are
+    parsed from those exact bytes. Invalid evidence raises instead of granting a
+    gate. Results record technical claims only, not a rights-holder authorization."""
     root = root.resolve(strict=True)
     manifest = load(local(root, manifest_path))
     if not isinstance(manifest, dict) or not isinstance(manifest.get('source_lock'), str):
@@ -371,11 +413,12 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
             for path in origin['paths']:
                 if path != '/' and not any(p == path or p.startswith(path + '/') for p in paths):
                     fail('original path absent from pinned identity: ' + component['id'])
-        verified = set()
+        verified, verified_bytes = {}, {}
         for eid, evidence in component['evidence'].items():
             kind = evidence['kind']
             if kind == 'locked':
-                verified.add(eid)  # inventory already checked these exact Git blobs
+                # inventory verified this digest against the exact locked Git blob.
+                verified[eid] = lock['evidence'][evidence['path']]['sha256']
                 continue
             if kind == 'local':
                 raw = local(root, evidence['path']).read_bytes()
@@ -392,15 +435,19 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                     fail('evidence is not a pinned Git blob')
                 oid = exact[0].split()[2].decode()
                 raw = audit.git(source, 'cat-file', 'blob', oid)
-            if len(raw) != evidence['bytes'] or hashlib.sha256(raw).hexdigest() != evidence['sha256']:
+            actual_digest = hashlib.sha256(raw).hexdigest()
+            if len(raw) != evidence['bytes'] or actual_digest != evidence['sha256']:
                 fail('evidence digest/size mismatch: ' + component['id'])
             if kind == 'git':
                 expected_url = lock['upstream']['repository'].removesuffix('.git') + '/blob/' + lock['upstream']['revision'] + '/' + evidence['path']
                 if evidence['locator'] != expected_url:
                     fail('Git evidence locator disagrees with fixed source')
-            verified.add(eid)
+            verified[eid] = actual_digest
+            if kind == 'local':
+                verified_bytes[eid] = raw
         conditions = component['conditions']
         def satisfied(name):
+            """Require a verified condition with nonempty references to byte-validated evidence."""
             condition = conditions[name]
             return (condition['result'] == 'verified' and bool(condition['evidence'])
                     and all(e in verified for e in condition['evidence']))
@@ -414,7 +461,8 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                 evidence = component['evidence'][eid]
                 if evidence['kind'] != 'local' or evidence['path'] == manifest['observations']:
                     continue
-                receipt = load(local(root, evidence['path']))
+                # Parse the already-hashed snapshot, not a second mutable file read.
+                receipt = json.loads(verified_bytes[eid].decode('utf-8'), object_pairs_hook=pairs)
                 fields(receipt, 'schema_version component condition decision source_identity inputs reviewer explanation')
                 if (type(receipt['schema_version']) is not int or receipt['schema_version'] != 1
                         or receipt['component'] != component['id'] or receipt['condition'] != name
@@ -424,9 +472,11 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                 strings(receipt['inputs'], False)
                 if any(e == eid or e not in verified for e in receipt['inputs']):
                     fail('condition receipt inputs missing or circular')
+                if any(verified[e] == verified[eid] for e in receipt['inputs']):
+                    fail('condition receipt input aliases verified receipt bytes')
                 text(receipt['reviewer'])
                 text(receipt['explanation'])
-                receipt_edges[eid] = receipt['inputs']
+                receipt_edges[verified[eid]] = [verified[e] for e in receipt['inputs']]
                 receipts.append(receipt)
             if not receipts:
                 fail('verified condition lacks a subject-bound review/verification receipt')
@@ -466,6 +516,10 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
 
 
 def main():
+    """Run the offline CLI and return 0 for success, 2 for strict holds, or 1 for invalid evidence.
+
+    Print JSON on success and sanitized diagnostics on failure; never download
+    missing objects, execute upstream builds or modify source/user files."""
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--check', action='store_true')
