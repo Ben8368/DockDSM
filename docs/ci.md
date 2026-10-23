@@ -34,7 +34,7 @@ CI 验证仓库当前已有实现，不下载 DSM PAT、不启动真实 DSM、�
 - master 的 required check 使用稳定的 `CI result` 并绑定 GitHub Actions；不可只要求某个可能跳过的子 job。PR、最新基线、讨论解决与管理员约束遵循 [ADR 0007](ADR/0007-bot-collaboration.md)。
 - 2026-10-22 经 GitHub API 核验：`master` 使用 classic branch protection（Rulesets 未启用），必需检查为 `CI result`（strict），要求线性历史、解决审查讨论、禁止强推与删除分支，`enforce_admins=true`；required approving reviews = 0，符合单维护者设计。规则变更时更新本行日期与内容。
 
-普通功能分支 push 不触发常规 CI；PR 的每个新 head 会运行对应检查。普通 push/PR 的新提交可取消旧检查，但被取消前已经消耗的 runner 时间无法收回；手动和发布运行不由较新提交取消。CI 不自动合并、提交或发布。
+普通功能分支 push 不触发常规 CI；PR 的每个新 head 会运行对应检查。普通 push/PR 的新提交可取消旧检查，但被取消前已经消耗的 runner 时间无法收回。手动运行不会主动取消同组旧检查，但 `master` push 可取消正在运行的手动 `test.yml`；发布运行不由较新提交取消。CI 不自动合并、提交或发布。
 
 PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前用 `gh pr checks <number>` 确认 `CI result` 为 success。
 
