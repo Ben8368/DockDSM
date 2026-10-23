@@ -57,11 +57,15 @@ class DispatchTests(unittest.TestCase):
                       'issue': {'number': 42, 'state': 'open', 'user': {'login': 'maintainer'},
                                 'labels': [{'name': 'bot:request'}], 'body': self.body}}
 
-    def run_dispatch(self, expected):
+    def run_dispatch(self, expected, expect_error=False):
         self.assertIsNotNone(NODE, 'Node.js is required to execute the github-script regression')
         result = subprocess.run([NODE, '-e', HARNESS], input=json.dumps(self.input),
                                 text=True, encoding='utf-8', capture_output=True, check=True)
         output = json.loads(result.stdout)
+        if expect_error:
+            self.assertIn('error', output, output)
+        else:
+            self.assertNotIn('error', output, output)
         labels = [call for call in output['calls'] if call['kind'] == 'label']
         self.assertEqual(len(labels), int(expected), output)
         if expected:
@@ -165,7 +169,7 @@ class DispatchTests(unittest.TestCase):
 
     def test_api_failure_stops_without_label(self):
         self.input['permissionError'] = True
-        output = self.run_dispatch(False)
+        output = self.run_dispatch(False, expect_error=True)
         self.assertIn('permission lookup failed', output['error'])
 
     def test_workflow_uses_minimal_permissions_and_no_checkout(self):
