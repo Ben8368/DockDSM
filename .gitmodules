@@ -1,0 +1,3 @@
+[submodule "vendor/arc"]
+	path = vendor/arc
+	url = https://github.com/AuxXxilium/arc.git
