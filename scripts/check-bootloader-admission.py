@@ -368,6 +368,28 @@ def verify_receipt_graph(edges):
         visit(eid)
 
 
+def subject_digest(component, identity, verified):
+    """Bind the reviewed component scope and direct proof bytes without hashing receipts into themselves.
+
+    Call only after all evidence bytes have been verified. The canonical subject
+    includes origin paths, source/license claims, build contract, selected
+    artifact identities and gate policy. Review receipts bind their own input
+    digests separately; changing a subject requires a new receipt, not a label.
+    This is integrity binding, not a signature or rights-holder authorization.
+    """
+    proof_ids = set(component['source']['evidence'] + component['license']['evidence'])
+    proof_ids.update(a['evidence'] for a in component['artifacts'] if a['evidence'] is not None)
+    subject = dict(schema_version=1, component=component['id'], name=component['name'],
+                   source_identity=identity, origin=component['origin'], source=component['source'],
+                   license=component['license'], artifacts=component['artifacts'], build=component['build'],
+                   proofs={eid: dict(kind=component['evidence'][eid]['kind'],
+                                     path=component['evidence'][eid]['path'],
+                                     locator=component['evidence'][eid]['locator'], sha256=verified[eid])
+                           for eid in sorted(proof_ids)}, requirements=REQUIREMENTS)
+    raw = json.dumps(subject, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    return hashlib.sha256(raw).hexdigest()
+
+
 def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
     """Evaluate all component gates from existing files and fixed Git objects, without writes.
 
@@ -454,7 +476,8 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
             return (condition['result'] == 'verified' and bool(condition['evidence'])
                     and all(e in verified for e in condition['evidence']))
         # A status/result edit cannot promote a URL/hash into a review or rebuild receipt.
-        receipt_edges = {}
+        receipt_edges, bound_inputs = {}, []
+        reviewed_subject = subject_digest(component, identity, verified)
         for name, condition in conditions.items():
             if condition['result'] != 'verified':
                 continue
@@ -465,12 +488,15 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                     continue
                 # Parse the already-hashed snapshot, not a second mutable file read.
                 receipt = json.loads(verified_bytes[eid].decode('utf-8'), object_pairs_hook=pairs)
-                fields(receipt, 'schema_version component condition decision source_identity inputs reviewer explanation')
-                if (type(receipt['schema_version']) is not int or receipt['schema_version'] != 1
+                fields(receipt, 'schema_version component condition decision source_identity subject_sha256 inputs input_digests reviewer explanation')
+                if (type(receipt['schema_version']) is not int or receipt['schema_version'] != 2
                         or receipt['component'] != component['id'] or receipt['condition'] != name
                         or receipt['decision'] != 'verified' or identity is None
                         or receipt['source_identity'] != identity):
                     fail('condition receipt subject/identity mismatch')
+                digest(receipt['subject_sha256'])
+                if receipt['subject_sha256'] != reviewed_subject:
+                    fail('receipt subject scope or direct proof identity changed')
                 strings(receipt['inputs'], False)
                 if any(e == eid or e not in verified for e in receipt['inputs']):
                     fail('condition receipt inputs missing or circular')
@@ -479,10 +505,19 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                 text(receipt['reviewer'])
                 text(receipt['explanation'])
                 receipt_edges[verified[eid]] = [verified[e] for e in receipt['inputs']]
+                bound_inputs.append(receipt)
                 receipts.append(receipt)
             if not receipts:
                 fail('verified condition lacks a subject-bound review/verification receipt')
         verify_receipt_graph(receipt_edges)
+        for receipt in bound_inputs:
+            expected = receipt['input_digests']
+            if not isinstance(expected, dict) or set(expected) != set(receipt['inputs']):
+                fail('receipt input digest coverage mismatch')
+            for eid, expected_digest in expected.items():
+                digest(expected_digest)
+                if expected_digest != verified[eid]:
+                    fail('receipt reviewed input content identity changed')
         source_ok = (component['source']['availability'] == 'complete'
                      and bool(component['source']['evidence'])
                      and bool(component['license']['evidence'])

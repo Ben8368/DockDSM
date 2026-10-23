@@ -69,7 +69,7 @@ python3 tests/bootloader-component-admission.py
 - `--check`：封闭 schema、重复 JSON key/ID、全部原审计对象覆盖、路径边界、来源 URL 绑定、Git 锁与本地摘要验证；允许如实记录阻断。输出按组件给出缺失条件和三个独立 gate。
 - `--strict`：全部组件证据与条件满足、状态为 APPROVED 才返回 0；未准入返回 2，无效清单/证据返回 1。不联网、不运行上游脚本、不安装依赖、不修改源仓库。路径参数相对于工作区；拒绝外部 gitdir/commondir、alternates、配置 include 及越界链接。复用原审计 Git reader，并禁用全局配置、fsmonitor、optional locks、lazy fetch/transports。
 - `source_import`、`combined_build`、`distribution` 分开计算，标签不能覆盖证据；检查快照无完整源码不能取得迁入资格。组合构建还要求主锁无未锁定依赖、无未认证 release/占位产物；分发还受 source-lock 的全局禁止约束。
-- 每条 verified 条件必须引用具有组件 ID、精确 source identity、condition、被校验 inputs、reviewer 及解释的独立本地 JSON 收据，且收据本身有 SHA256/bytes。URL、通用说明、状态字段或普通 LICENSE blob 不能冒充重建/权利评审收据。verified 条件收据的输入图不得循环；固定产物须引用同路径的原始 Git blob，不接受本地收据冒充、重复产物路径或零字节占位晋级。当前没有真实批准收据，测试中仅有合成收据。
+- 每条 verified 条件必须引用具有组件 ID、精确 source identity、condition、被校验 inputs、reviewer 及解释的独立本地 JSON 收据，且收据本身有 SHA256/bytes。URL、通用说明、状态字段或普通 LICENSE blob 不能冒充重建/权利评审收据。verified 条件收据的输入图不得循环；固定产物须引用同路径的原始 Git blob，不接受本地收据冒充、重复产物路径或零字节占位晋级。verified 收据使用 schema 2：`subject_sha256` 绑定组件路径范围、来源/许可证据身份、所选产物、构建契约及门禁条件；`input_digests` 逐项绑定本次实际验算的输入内容。改变范围、输入或产物必须重做对应收据，旧 schema 1 不获豁免。manifest/source-lock 的 schema 不变。当前没有真实批准收据，测试中仅有合成收据。
 - 本工具证明版本/文件/记录的一致性，不验证审查人签名、不替代权利人许可或法律判断；有权限同时伪造清单和全部收据的人不在其可信边界内。新增来源或真实批准必须经代码审查，不可从公网元数据自动晋级。
 - CI 在现有原生 amd64/arm64 合成 job 执行离线夹具与真实 manifest 的文本/tree 证据校验，不 fetch submodule；本地 `--check`/`--strict` 完整对象检查需要已经存在的固定 `vendor/arc`，缺失时失败而非下载。双架构镜像及既有检查不变。
 

@@ -68,6 +68,23 @@ class AdmissionTests(unittest.TestCase):
         (self.root / name).write_bytes(raw)
         return dict(kind='local', path=name, sha256=hashlib.sha256(raw).hexdigest(), bytes=len(raw), locator='fixture review')
 
+    def fixture_proof_digests(self, component):
+        """Describe controlled fixture identities; production evaluation still verifies every byte independently."""
+        return {eid: (self.lock['evidence'][e['path']]['sha256'] if e['kind'] == 'locked' else e['sha256'])
+                for eid, e in component['evidence'].items()}
+
+    def renew_fixture_subject(self, component):
+        """Issue new synthetic receipts for an intentionally changed fixture scope, never real approvals."""
+        subject = admission.subject_digest(component, self.lock['upstream'], self.fixture_proof_digests(component))
+        for condition in component['conditions'].values():
+            for eid in condition['evidence']:
+                if not eid.startswith('review-'):
+                    continue
+                path = component['evidence'][eid]['path']
+                receipt = admission.load(self.root / path)
+                receipt['subject_sha256'] = subject
+                component['evidence'][eid] = self.evidence(path, json.dumps(receipt).encode())
+
     def approve(self):
         """Create synthetic subject-bound receipts solely to exercise positive and negative gate paths."""
         self.lock['distribution']['combined_artifact_allowed'] = True
@@ -78,8 +95,11 @@ class AdmissionTests(unittest.TestCase):
             component['blockers'] = []
             component['admission'] = dict(status='APPROVED', source_import=True, combined_build=True, distribution=True)
             for name, condition in component['conditions'].items():
-                receipt = dict(schema_version=1, component=component['id'], condition=name, decision='verified',
-                               source_identity=self.lock['upstream'], inputs=['license'], reviewer='synthetic fixture only',
+                receipt = dict(schema_version=2, component=component['id'], condition=name, decision='verified',
+                               source_identity=self.lock['upstream'],
+                               subject_sha256=admission.subject_digest(component, self.lock['upstream'], self.fixture_proof_digests(component)),
+                               inputs=['license'], input_digests={'license': self.lock['evidence']['LICENSE']['sha256']},
+                               reviewer='synthetic fixture only',
                                explanation='Synthetic receipt exercises gates; never approves production inputs.')
                 eid = 'review-' + name
                 component['evidence'][eid] = self.evidence(component['id'] + '-' + name + '.json', json.dumps(receipt).encode())
@@ -263,6 +283,7 @@ class AdmissionTests(unittest.TestCase):
             locator=self.lock['upstream']['repository'] + '/blob/' + self.lock['upstream']['revision'] + '/' + path)
         component['artifacts'] = [dict(path=path, kind='pinned_blob', evidence='binary',
                                        source_relation='Synthetic artifact only')]
+        self.renew_fixture_subject(component)
         return component
 
     def test_pinned_artifact_is_bound_to_exact_source_blob(self):
@@ -326,6 +347,8 @@ class AdmissionTests(unittest.TestCase):
         path = component['evidence'][eid]['path']
         receipt = admission.load(self.root / path)
         receipt['inputs'] = inputs
+        verified = self.fixture_proof_digests(component)
+        receipt['input_digests'] = {eid: verified.get(eid, '0' * 64) for eid in inputs}
         raw = json.dumps(receipt).encode()
         component['evidence'][eid] = self.evidence(path, raw)
         if alias is not None:
@@ -400,9 +423,9 @@ class AdmissionTests(unittest.TestCase):
         self.approve()
         component = self.manifest['components'][0]
         component['evidence']['license-copy'] = self.evidence('license-copy', (self.repo / 'LICENSE').read_bytes())
-        self.rewrite_receipt(component, 'source_complete', ['license-alias'])
-        self.rewrite_receipt(component, 'license_scope', ['rights-alias'], alias='license-alias', separate_path=True)
         self.rewrite_receipt(component, 'rights_review', ['license', 'license-copy'], alias='rights-alias')
+        self.rewrite_receipt(component, 'license_scope', ['rights-alias'], alias='license-alias', separate_path=True)
+        self.rewrite_receipt(component, 'source_complete', ['license-alias'])
         self.assertTrue(self.run_check()['strict_pass'])
 
     def test_unavailable_origin_must_match_observed_repository_url(self):
@@ -419,6 +442,75 @@ class AdmissionTests(unittest.TestCase):
         component['origin']['repository'] = 'https://github.com/impostor/unavailable'
         with self.assertRaisesRegex(ValueError, 'origin'):
             self.run_check()
+
+    def test_existing_receipts_cannot_approve_broader_origin_scope(self):
+        """Reusing unchanged receipts must not expand an approved single-file subject to the whole tree."""
+        self.approve()
+        self.assertTrue(self.run_check()['strict_pass'])
+        self.manifest['components'][0]['origin']['paths'] = ['/']
+        with self.assertRaises(ValueError):
+            self.run_check()
+
+    def test_existing_receipts_cannot_approve_rebound_input_bytes(self):
+        """An existing input ID must retain its reviewed content identity even if replacement bytes validate."""
+        self.approve()
+        component = self.manifest['components'][0]
+        component['evidence']['license'] = self.evidence('replacement-license', b'different valid evidence')
+        with self.assertRaises(ValueError):
+            self.run_check()
+
+    def test_existing_receipts_cannot_approve_replacement_artifact(self):
+        """Changing the selected pinned artifact under the same commit requires new review receipts."""
+        self.approve()
+        component = self.register_fixture_artifact()
+        self.assertTrue(self.run_check()['strict_pass'])
+        component['artifacts'] = [dict(path='LICENSE', kind='pinned_blob', evidence='license', source_relation='substituted subject')]
+        with self.assertRaises(ValueError):
+            self.run_check()
+
+    def test_reviewed_condition_input_cannot_be_rebound_independently(self):
+        """Bind condition-only inputs that are not already included among source/license/artifact proofs."""
+        self.approve()
+        component = self.manifest['components'][0]
+        component['evidence']['extra-proof'] = self.evidence('extra-proof', b'original reviewed bytes')
+        self.rewrite_receipt(component, 'rights_review', ['extra-proof'])
+        self.assertTrue(self.run_check()['strict_pass'])
+        component['evidence']['extra-proof'] = self.evidence('replacement-proof', b'different reviewed bytes')
+        with self.assertRaisesRegex(ValueError, 'input content identity'):
+            self.run_check()
+
+    def test_receipts_bind_build_contract(self):
+        """A changed entrypoint, toolchain or dependency contract needs fresh receipts even under one commit."""
+        self.approve()
+        component = self.manifest['components'][0]
+        for field in ('entrypoints', 'toolchain', 'dependencies', 'reproducibility'):
+            with self.subTest(field=field):
+                previous = copy.deepcopy(component['build'][field])
+                component['build'][field] = ['changed contract'] if isinstance(previous, list) else 'changed contract'
+                with self.assertRaisesRegex(ValueError, 'subject scope'):
+                    self.run_check()
+                component['build'][field] = previous
+
+    def test_legacy_receipt_without_subject_binding_cannot_approve(self):
+        """Never grandfather schema-1 receipts that lack immutable subject/input bindings."""
+        self.approve()
+        component = self.manifest['components'][0]
+        eid = 'review-source_complete'
+        path = component['evidence'][eid]['path']
+        receipt = admission.load(self.root / path)
+        receipt['schema_version'] = 1
+        del receipt['subject_sha256'], receipt['input_digests']
+        component['evidence'][eid] = self.evidence(path, json.dumps(receipt).encode())
+        with self.assertRaises(ValueError):
+            self.run_check()
+
+    def test_new_receipts_can_authorize_deliberately_reviewed_scope(self):
+        """An intentional fixture scope change can pass only after new receipt bytes bind the new subject."""
+        self.approve()
+        component = self.manifest['components'][0]
+        component['origin']['paths'] = ['/']
+        self.renew_fixture_subject(component)
+        self.assertTrue(self.run_check()['strict_pass'])
 
     def observed_tree_fixture(self):
         """Capture a disposable single-blob remote tree without network access or real source writes."""
