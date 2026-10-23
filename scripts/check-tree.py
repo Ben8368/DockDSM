@@ -33,9 +33,13 @@ def check(name: str, raw: bytes) -> list[str]:
 
 
 def main() -> int:
-    tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+    tracked = subprocess.check_output(
+        ['git', 'ls-files', '--stage', '-z'], cwd=ROOT).decode().split('\0')
     errors = []
-    for name in filter(None, tracked):
+    for entry in filter(None, tracked):
+        index, name = entry.split('\t', 1)
+        if index.split(' ', 1)[0] == '160000':
+            continue
         path = ROOT / name
         if not path.is_file():
             errors.append(f'{name}: tracked file is missing')

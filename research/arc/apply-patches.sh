@@ -10,6 +10,7 @@ if [[ ! -e "${ARC_DIR}/.git" ]]; then
   printf 'ARC submodule is missing at %s\n' "${ARC_DIR}" >&2
   exit 1
 fi
+ARC_DIR="$(cd "${ARC_DIR}" && pwd)"
 
 if [[ -f "${ARC_DIR}/.git" ]]; then
   read -r GIT_DIR_LINE <"${ARC_DIR}/.git"

@@ -18,7 +18,7 @@
 ## Evidence
 
 - [ ] `python3 scripts/governance-docs-check.py`
-- [ ] 相关 CI / 本地命令结果（未等待远端时标注“`CI result` / CodeRabbit 待核验”；合入前二者均须 success）
+- [ ] 相关 CI / 本地命令结果（未等待远端时标注“`CI result` / CodeRabbit 待核验”；合入前 `CI result` 须 success，CodeRabbit 须 success 或由维护者按 [AI_RULES](../docs/AI_RULES.md#pr-推送与远端验证) 书面记录跳过原因）
 - [ ] CONTEXT / RISK / TD / ADR 已更新到唯一事实源（如适用）
 - [ ] AI / 依赖机器人的改动与建议未降低测试强度或绕过人工审查（如适用）
 
