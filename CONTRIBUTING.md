@@ -28,4 +28,4 @@ bash research/arm64/tests/smoke.sh
 
 PR 使用仓库模板，写明命令、结果、未覆盖项及必要的风险/技术债/ADR。`CI result` 是统一自动门禁：不允许必需任务失败、取消或意外跳过。只有文档变更能按策略跳过原生镜像检查；发布必须强制完整检查。CodeQL、标签和 stale 不代替人工审查。
 
-PR 推送后无需持续守候：CI 在后台运行；合并前确认 `CI result` 为 success。未等待远端结果时，在 PR 中标注“`CI result` 待核验”。
+PR 推送后无需持续守候：CI 与 CodeRabbit 在后台运行；合并前确认 `CI result` 与 CodeRabbit 均为 success。未等待远端结果时，在 PR 中标注“`CI result` / CodeRabbit 待核验”。合入门禁细则见 [AI_RULES](docs/AI_RULES.md#pr-推送与远端验证)。

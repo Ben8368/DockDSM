@@ -75,11 +75,13 @@
 - 本地验证完成后，**仅在用户明确要求时**推送工作分支并创建 PR；**不阻塞等待远端 CI**。汇报 PR 链接、HEAD SHA 与“`CI result` 待核验”即可结束本轮。
 - 默认一个工作包 / 用户请求对应一个直接面向 `master` 的 PR；一个 PR 可以包含多个主题清晰、可分别审查的 commit，不要求压成单 commit。先在本地整合全部范围并完成验证，再一次性推送并创建 PR，避免提前开依赖 PR 或逐个推送中间状态。
 - 需要远端结果时运行 `gh pr checks <number>`；失败在同一分支追加修复提交，不重写已推送历史。
-- 合并前必须确认 `CI result` 为 success。默认由维护者合并；只有用户明确要求“本轮合并”时，才等待检查并在通过后合并。
+- **合并前**必须同时确认：`CI result` 为 success，且 **CodeRabbit** commit status 为 success（非 pending / error）。推送/开 PR 后仍不阻塞等待；仅在用户要求“本轮合并”或维护者准备合入时轮询二者。`CI result` 先绿不等于可以立刻合并——CodeRabbit 常更晚才开始审查。
+- **不把** CodeRabbit 配成 GitHub branch protection 的 required check（可能长时间 pending，不能挡死已通过的 `CI result`）。流程门禁与硬门禁分开；确需跳过兔子时，维护者须在 PR 注明原因（服务故障、明显队列异常等）。
+- 默认由维护者合并；只有用户明确要求“本轮合并”时，才等待上述检查并在通过后合并。
 - 只有确有独立审查 / 发布边界时才拆多个 PR；不要创建以另一个未合并 PR 为 base 的 stacked PR。依赖 PR 必须串行：当前 PR 合入后，从最新 `master` 建立下一个候选分支，再推送并创建 PR。若候选 PR 已提前堆叠，先等前项合入，再以新分支从最新 `master` 搬运后续提交，不改写已推送分支历史。
-- PR 新 head 会重新触发 CI；自动审查按仓库配置运行（当前面向 base 为 `master` 的非 draft PR）。本地先完成并批量提交可减少无效运行，但修复或更新后重新验证不可省略。不得为减少 CI 次数而过滤必要 PR 检查、放宽 strict 分支保护或跳过审查。
-- 若 GitHub Merge Queue 已启用且 CI 支持 `merge_group`，可用队列验证最新基线；仍遵循每个工作包一个 PR 的默认规则。
-- 不启用自动合并，也不因等待超时绕过分支保护。
+- PR 新 head 会重新触发 CI 与 CodeRabbit；自动审查按仓库配置运行（当前面向 base 为 `master` 的非 draft PR）。本地先完成并批量提交可减少无效运行，但修复或更新后重新验证不可省略。不得为减少 CI 次数而过滤必要 PR 检查、放宽 strict 分支保护或跳过审查。
+- 若 GitHub Merge Queue 已启用且 CI 支持 `merge_group`，可用队列验证最新基线；仍遵循每个工作包一个 PR 的默认规则，合入前仍须 CodeRabbit success（除非维护者按上款书面跳过）。
+- 不启用自动合并，也不因等待超时绕过分支保护或擅自跳过 CodeRabbit。
 
 - 不修改或清理用户的无关改动，不使用破坏性 Git 命令；不得提交凭据、PAT 或磁盘镜像。
 

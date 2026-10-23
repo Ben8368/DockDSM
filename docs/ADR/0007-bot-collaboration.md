@@ -15,6 +15,7 @@
 - Renovate 管理 Python / Actions 普通更新；保留 Dependabot Alerts 与 security updates。范围、审批阶段和回退由 [迁移文档](../renovate-migration.md)定义。
 - 允许任务、依赖和安全修复的短期分支，通过 PR 汇入 master；任务结束后清理对应分支，不影响未知或在用分支。这补充 ADR 0005 的初始化分支策略，其 CI 与发布决策继续有效。
 - CodeRabbit 负责审查，Actions / CodeQL 提供客观验证；机器人不得因审查评论自行扩大任务范围或互相自动派单。
+- 人工合入前须等待 CodeRabbit commit status 为 success，并与 `CI result` 一并确认；该要求是流程门禁，不写入 branch protection required checks（避免第三方 pending 挡死合入）。细则见 [AI_RULES](../AI_RULES.md#pr-推送与远端验证)。
 - master 要求 PR、最新基线上的 CI result、解决审查讨论和线性历史；禁止强推、删除及管理员绕过，不向机器人授予规则绕过能力。
 - 单维护者仓库不要求自己批准自己的 PR（required approving reviews = 0）；审查责任和最终合并仍由维护者承担。关闭仓库与各机器人的自动合并。
 - 本次已授权的根提交覆盖可临时使用管理员绕过，完成后立即锁定；这是一次性初始化操作，不是日常开发流程。
