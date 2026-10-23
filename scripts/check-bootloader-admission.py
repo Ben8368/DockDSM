@@ -258,15 +258,17 @@ def tree_identity(rows):
 
 
 def verify_observations(observations, root=ROOT):
-    """Verify captured remote tree identities and selected text blobs without networking.
+    """Return the verified remote tree snapshot after checking identities and selected text blobs.
 
     The caller supplies an authorized workspace root for the inventory file.
     Digest/size/structure mismatches fail closed; valid metadata is not a complete
-    source delivery, binary rebuild proof or permission to distribute."""
+    source delivery, binary rebuild proof or permission to distribute. Return an
+    empty mapping when no repositories are recorded; never reread inventory for
+    downstream origin-path checks."""
     if not isinstance(observations, dict) or not isinstance(observations.get('repositories'), dict):
         fail('invalid observation receipt')
     if not observations['repositories']:
-        return
+        return {}
     inventory = observations['tree_inventory']
     fields(inventory, 'path bytes sha256')
     digest(inventory['sha256'])
@@ -291,6 +293,7 @@ def verify_observations(observations, root=ROOT):
             if (oid != item['oid'] or by_path[path][2] != oid
                     or hashlib.sha256(raw).hexdigest() != item['sha256'] or len(raw) != item['bytes']):
                 fail('observation text identity mismatch')
+    return trees
 
 
 def verify_repository_boundary(root, source):
@@ -379,7 +382,7 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
     lock = load(local(root, manifest['source_lock']))
     validate(manifest, lock)
     observations = load(local(root, manifest['observations']))
-    verify_observations(observations, root)
+    trees = verify_observations(observations, root)
     relative(source_path)
     source = (root / source_path).resolve(strict=True)
     verify_repository_boundary(root, source)
@@ -408,8 +411,7 @@ def evaluate(root, manifest_path=MANIFEST, source_path='vendor/arc'):
                 fail('unresolved origin disagrees with observed repository URL')
             identity = None
         if origin['identity'] != 'unresolved':
-            paths = source_paths if origin['identity'] == 'source-lock' else [row[0] for row in
-                    load(local(root, observations['tree_inventory']['path']))[key]]
+            paths = source_paths if origin['identity'] == 'source-lock' else [row[0] for row in trees[key]]
             for path in origin['paths']:
                 if path != '/' and not any(p == path or p.startswith(path + '/') for p in paths):
                     fail('original path absent from pinned identity: ' + component['id'])

@@ -56,6 +56,13 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 - **docstring：** [既有警告](https://github.com/Ben8368/DockDSM/pull/21#issuecomment-6361394087)报 8.96% / 阈值 80%，是 CodeRabbit pre-merge 文档警告；当时没有阻止 CI result 或 commit status 成功，也不是本地执行失败。为校验器公开入口、路径/Git/摘要/图的信任边界及故障注入函数补充参数语义、失败条件和副作用；不修改 CodeRabbit 配置或 CI。AST 实测 `check-bootloader-admission.py` 19/19、`audit-bootloader-source.py` 3/3、组件测试 52/52 及新增 CI 策略测试 1/1 有 docstring；这是本地统计，不冒充远端工具输出。
 - **绿灯验证：** Windows PowerShell 7.6.5 / AMD64 / Python 3.14.2，WSL Ubuntu 24.04 / Linux x86_64 / Python 3.12.3（均重新探测）。Windows/WSL 全量 42 项准入测试、11 项源码审计通过；WSL `unshare -Urn` 的 42 项断网回归通过。`--check`=0 / `--strict`=2，所有 gate 仍拒绝。其余实际命令及结果见下表；组件清单、source-lock、RISK-006 及生产路径未修改，不迁移源码、不合并、不发布。
 
+### 同轮远端复审补充：tree inventory 快照
+
+- `0ea6866e998b95835760cc7e4e1185fd44d10a3c` 的 CI result / CodeRabbit 均 success，远端 docstring coverage 实际为 **97.40%**（77 functions / 4 files，阈值 80%），既有警告解除；本地 AST 与远端统计口径分别保留，不混称相同指标。
+- [该 HEAD 新正文审查](https://github.com/Ben8368/DockDSM/pull/21#pullrequestreview-5626785121)仍指出 `verify_observations` 校验 tree inventory 后，origin path 会另读磁盘副本。新故障注入在校验结束后向文件添加不存在的路径，旧实现漏检（FAIL / `ValueError not raised`）；另在校验后删除路径，旧实现错误拒绝（ERROR）；空/非空快照返回契约检查也失败。
+- `verify_observations` 现返回实际验证的 tree snapshot，无仓库时返回 `{}`；`evaluate` 直接从此快照读取 origin 路径，不再二次读取 inventory。新增三项测试覆盖添加/删除替换和返回契约；没有模拟验证成功或跳过摘要/tree/文本校验。全套准入回归增至 **45 tests**，原七项收据别名回归继续保留。
+- 这次补充只涉及校验器、其测试与本唯一证据记录；源码锁、组件清单、CI 配置、RISK-006、生产路径均保持。45 项 Windows/WSL/断网准入、11 项源码审计及下列检查作为最终提交验证；修复继续在 PR #21 追加提交并回复正文意见，不沿用前一 HEAD 的绿灯作为新提交结论。
+
 ## 🚦 Audit Report
 
 **总体评价：🟡 可通行（仅本工作包；迁移/组合构建/分发保持阻断）**
@@ -68,11 +75,11 @@ Modules tree 有 18,028 个 `.ko`，还有 firmware，没有 C/H 或 `src/`。co
 
 | 命令（仓库根） | 结果 |
 | --- | --- |
-| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 最终别名加固后 42 tests，Windows/WSL 均完整通过 |
+| `python tests/bootloader-component-admission.py` / WSL `python3 tests/bootloader-component-admission.py` | 最终快照加固后 45 tests，Windows/WSL 均完整通过 |
 | `python tests/bootloader-source-audit.py` | 11 tests 通过 |
 | `python scripts/check-bootloader-admission.py --check` | exit 0；如实报告阻断 |
 | `python scripts/check-bootloader-admission.py --strict` | exit 2，预期拒绝；非回归失败 |
-| WSL `unshare -Urn env PYTHONDONTWRITEBYTECODE=1 python3 tests/bootloader-component-admission.py` | 独立无网络 namespace 中 42 tests 通过 |
+| WSL `unshare -Urn env PYTHONDONTWRITEBYTECODE=1 python3 tests/bootloader-component-admission.py` | 独立无网络 namespace 中 45 tests 通过 |
 | `python scripts/governance-docs-check.py` / `python tests/governance-docs.py` | 通过 |
 | `python tests/ci-policy.py` / `python tests/branding.py` | 最终 21 / 5 tests 通过 |
 | `python scripts/check-config.py` / `python scripts/check-tree.py` / `git diff --check` | 通过（包含暂存新增文件） |

@@ -420,6 +420,56 @@ class AdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'origin'):
             self.run_check()
 
+    def observed_tree_fixture(self):
+        """Capture a disposable single-blob remote tree without network access or real source writes."""
+        key = 'fixture'
+        rows = [['LICENSE', '100644', self.fixture.git('rev-parse', 'HEAD:LICENSE'), 16]]
+        trees = {key: rows}
+        raw = json.dumps(trees).encode()
+        path = self.root / 'trees.json'
+        path.write_bytes(raw)
+        observation = dict(repositories={key: dict(
+            repository=self.lock['upstream']['repository'], inspection_commit=self.lock['upstream']['revision'],
+            tree=admission.tree_identity(rows), truncated=False, tree_summary=dict(entry_count=1), texts={})},
+            tree_inventory=dict(path=path.name, bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest()))
+        (self.root / 'observations.json').write_text(json.dumps(observation), encoding='utf-8')
+        self.manifest['components'][0]['origin']['identity'] = 'observations'
+        return path, trees
+
+    def test_origin_path_added_after_inventory_hash_cannot_be_accepted(self):
+        """Changing inventory after verification must not authenticate a path absent from the hashed tree."""
+        path, trees = self.observed_tree_fixture()
+        self.manifest['components'][0]['origin']['paths'] = ['invented-source']
+        original = admission.verify_observations
+        def replace_after_verification(*args):
+            """Inject a file change only after the original bytes have passed all identity checks."""
+            snapshot = original(*args)
+            trees['fixture'].append(['invented-source', '100644', '0' * 40, 0])
+            path.write_text(json.dumps(trees), encoding='utf-8')
+            return snapshot
+        with mock.patch.object(admission, 'verify_observations', side_effect=replace_after_verification):
+            with self.assertRaisesRegex(ValueError, 'path absent'):
+                self.run_check()
+
+    def test_origin_path_uses_verified_inventory_when_disk_copy_changes(self):
+        """An unrelated later file edit must not replace the authenticated origin-path snapshot."""
+        path, _ = self.observed_tree_fixture()
+        original = admission.verify_observations
+        def replace_after_verification(*args):
+            """Remove disk inventory after capture to detect any second read by the origin-path check."""
+            snapshot = original(*args)
+            path.write_text('{"fixture": []}', encoding='utf-8')
+            return snapshot
+        with mock.patch.object(admission, 'verify_observations', side_effect=replace_after_verification):
+            self.assertFalse(self.run_check()['strict_pass'])
+
+    def test_observation_verifier_returns_authenticated_snapshot(self):
+        """Return verified tree rows to callers, including an empty mapping for no observed repositories."""
+        self.assertEqual(admission.verify_observations(dict(repositories={}), self.root), {})
+        _, trees = self.observed_tree_fixture()
+        observation = admission.load(self.root / 'observations.json')
+        self.assertEqual(admission.verify_observations(observation, self.root), trees)
+
     def test_source_identity_mutation_fails(self):
         """A recorded revision must identify locally available objects, not merely look like a SHA."""
         self.lock['upstream']['revision'] = '0' * 40
