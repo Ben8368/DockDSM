@@ -45,7 +45,7 @@ WSL 使用一次性 `/var/tmp/dockdsm-phase1-validation` clone（基于 `4a70602
 - 新用例在独立子进程中污染 Git dir/worktree/common-dir/index/object-dir 和配置注入，执行 fixture setup、helper 写入、shallow clone 与 partial clone；调用者仓库含已修改/未跟踪文件，测试前后逐文件（包括 `.git`）比较 bytes。
 - `readme.md`：介绍改为源码准入 → 自主源码维护 → DockDSM Bootloader 品牌和接口 → x86 → ARM64，引用 ADR 0009；保留来源和既有平台边界。
 
-Audit Report：🟡 本修复可验证，未发现新增生产或数据风险；RISK-006 保持开放，组件准入及 DSM L2/L3 仍不构成本轮完成项。
+Audit Report：🟡 本修复验证通过，未发现新增生产或数据风险；RISK-006 保持开放，组件准入及 DSM L2/L3 仍不属于本轮完成项。
 
 | 环境 | 命令 | 结果 |
 | --- | --- | --- |
