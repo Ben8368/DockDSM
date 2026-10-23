@@ -77,6 +77,13 @@ class DispatchTests(unittest.TestCase):
                 self.input['issue']['body'] = self.body.replace('Documentation', category).replace('readme.md', paths)
                 self.run_dispatch(True)
 
+    def test_exactly_three_paths_and_nested_docs_path_are_allowed(self):
+        for paths in ('tests/a.py\ntests/b.sh\ndocs/howto.md',
+                      'docs/guides/setup.md'):
+            with self.subTest(paths=paths):
+                self.input['issue']['body'] = self.body.replace('readme.md', paths)
+                self.run_dispatch(True)
+
     def test_live_permission_is_required_for_author_and_actor(self):
         for target in ('actor', 'author'):
             with self.subTest(target=target):
@@ -88,6 +95,27 @@ class DispatchTests(unittest.TestCase):
                     self.input['issue']['author_association'] = 'OWNER'
                 self.run_dispatch(False)
                 self.input = saved
+
+    def test_write_and_maintain_permissions_are_required_for_both_people(self):
+        self.input['issue']['user']['login'] = 'issue-author'
+        self.input['actor'] = 'trigger-actor'
+        for author_permission, actor_permission in (('write', 'maintain'),
+                                                      ('maintain', 'write')):
+            with self.subTest(author=author_permission, actor=actor_permission):
+                self.input['permissions'] = {'issue-author': author_permission,
+                                             'trigger-actor': actor_permission}
+                output = self.run_dispatch(True)
+                permission_calls = [call['username'] for call in output['calls']
+                                    if call['kind'] == 'permission']
+                self.assertCountEqual(permission_calls, ['issue-author', 'trigger-actor'])
+
+        for person in ('issue-author', 'trigger-actor'):
+            for permission in ('triage', 'read'):
+                with self.subTest(person=person, permission=permission):
+                    self.input['permissions'] = {'issue-author': 'write',
+                                                 'trigger-actor': 'maintain'}
+                    self.input['permissions'][person] = permission
+                    self.run_dispatch(False)
 
     def test_bot_cannot_dispatch(self):
         self.input['actor'] = 'github-actions[bot]'
@@ -114,7 +142,9 @@ class DispatchTests(unittest.TestCase):
         for path in ('src/install.sh', '.github/workflows/test.yml', '../readme.md',
                      'tests/../src/install.sh', 'tests/**', 'tests/a.py;echo x',
                      'docs/AI_RULES.md', 'docs/ADR/0008-test.md', 'docs/ci.md',
-                     'docs/platforms.md', 'tests/qemu-patches.sh', 'docs/archive/test.md',
+                     'docs/platforms.md', 'docs/lessons/governance.md',
+                     'tests/qemu-patches.sh', 'tests/surveillance/installer.py',
+                     'docs/archive/test.md',
                      'tests/a.py\ntests/b.py\ntests/c.py\ntests/d.py', ''):
             with self.subTest(path=path):
                 self.input['issue']['body'] = self.body.replace('readme.md', path)
