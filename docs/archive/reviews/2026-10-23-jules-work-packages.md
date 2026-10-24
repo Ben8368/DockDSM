@@ -15,7 +15,7 @@
 
 ## 命令与结果
 
-以下 `python` 指上述已有 venv；没有安装到宿主系统 Python。
+以下历史 `python` 命令使用上述已有 venv；历史 `python3` 命令（包括 `python3 tests/jules-setup.py`）的解释器绑定未知，不能确认其结果使用上述 venv、Python 3.11.15 或 PyYAML 6.0.3。历史执行命令保持原样记录；本轮如有重新验证，将另列实际解释器和结果。
 
 | 命令 | 结果 |
 | --- | --- |
@@ -50,3 +50,24 @@ docker run --rm --network none --read-only --tmpfs /tmp:exec \
 - 环境脚本测试使用工具桩，不代表真实 Jules VM 已安装依赖或保存快照。实际 Configuration → Run and Snapshot、云端 Docker 能力未运行。
 - 未运行真实权限/分页/并发事件、额度计量、自动重触发或 Tooling 实现；workflow 只检查 GitHub 在途记录，账户与本地编辑仍由派单者核验。
 - 未运行完整原生双架构镜像构建、DSM L2、KVM L3 或硬件验收；CI 路由与生产门禁保持原要求。
+
+## PR #23 审查修复复核（2026-10-24）
+
+历史 `python3` 命令的解释器绑定仍未知。本轮重新执行 `python3 tests/jules-setup.py` 时，实际解释器为 macOS arm64 上的 Python 3.11.15，6 项通过；新增测试用工具桩验证 venv Python 3.10 被拒绝、3.11 在 `--check` 下成功且不安装依赖。其他重新验证命令仍保留其实际调用形式，未将历史结果改写为新结果。
+
+国家检测移除 curl 的 TLS 跳过参数并保留 5 秒超时。生产 runtime 的 apt 安装清单显式增加 `ca-certificates`，让国家服务请求使用系统 CA bundle；影响为增加该 runtime 系统包。完成目标镜像构建后仍需检查 `/etc/ssl/certs/ca-certificates.crt` 存在且 curl 默认验证启用。由于本轮 Docker daemon socket 不可用，未检查实际生产镜像或构建镜像。
+
+本轮命令与结果：
+
+| 命令 | 结果 |
+| --- | --- |
+| `python3 tests/jules-setup.py` | Python 3.11.15，6 项通过；含 venv 3.10 拒绝和 3.11 接受回归 |
+| `PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/bash tests/pat-acquisition.sh` | 通过；包含 TLS 证书校验失败时依次回退并选择全局镜像的离线回归 |
+| `PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/bash research/arm64/tests/smoke.sh` | 通过；ARM research smoke 与源码摘要断言通过 |
+| `shellcheck -x src/pat.sh scripts/jules-setup.sh` | 通过 |
+| `python3 scripts/governance-docs-check.py` | 通过 |
+| `python3 tests/governance-docs.py` | 11 个场景通过 |
+| `git diff --check` | 通过 |
+| `docker image inspect qemux/qemu:7.50 --format '{{.Id}}'` | 未能检查；当前 Colima Docker socket 不存在，生产 runtime CA bundle 未获镜像级验证 |
+
+以上为 macOS arm64 / zsh 宿主上的本地合成验证；不构成 DSM L2、KVM L3 或镜像运行验收。

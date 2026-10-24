@@ -8,7 +8,7 @@ getCountry() {
   local query=$2
   local json result
 
-  { json=$(curl -m 5 -H "Accept: application/json" -sfk "$url"); local rc=$?; } || :
+  { json=$(curl -m 5 -H "Accept: application/json" -sf "$url"); local rc=$?; } || :
   (( rc != 0 )) && return 0
 
   { result=$(echo "$json" | jq -r "$query" 2> /dev/null); rc=$?; } || :
