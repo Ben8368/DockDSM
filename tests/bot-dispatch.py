@@ -167,6 +167,29 @@ class DispatchTests(unittest.TestCase):
                 self.input['issue']['body'] = self.body.replace('readme.md', path)
                 self.run_dispatch(False)
 
+    def test_nested_protected_test_paths_cannot_bypass_exclusions(self):
+        """The Tests allowlist keeps protected families blocked at every nesting depth."""
+        paths = (
+            'tests/nested/qemu-x.sh',
+            'tests/nested/surveillance-probe.py',
+            'tests/nested/arm-runtime.py',
+            'tests/nested/production-check.py',
+            'tests/nested/official-pat.py',
+            'tests/nested/bootloader-audit.py',
+            'tests/nested/ci-policy.py',
+            'tests/nested/bot-dispatch-extra.py',
+            'tests/nested/jules-setup-helper.py',
+            'tests/nested/proprietary-check.py',
+            'tests/nested/x86-installer-check.py',
+            'tests/nested/platform.snapshot.py',
+            'tests/nested/more/fixtures/sample.py',
+            'tests/nested/more/dev/helper.sh',
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace('readme.md', path)
+                self.run_dispatch(False)
+
     def test_missing_fields_approval_and_ambiguous_headings(self):
         for body in (None, '', self.body.replace('[x]', '[ ]'),
                      self.body.replace('Documentation', 'Runtime'),
