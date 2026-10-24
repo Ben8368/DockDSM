@@ -330,7 +330,9 @@ def verify_repository_boundary(root, source):
     # External object stores are never part of an admission inspection.
     for directory in set((gitdir, shared)):
         for entry in directory.rglob('*'):
-            if (entry.is_symlink() or entry.is_junction()) and not entry.resolve().is_relative_to(root.resolve()):
+            # resolve() also follows Windows junctions on Python 3.11. Check
+            # every resolved path instead of relying on the 3.12 is_junction API.
+            if not entry.resolve().is_relative_to(root.resolve()):
                 fail('Git storage link outside workspace')
         for name in ('config', 'config.worktree'):
             config = directory / name

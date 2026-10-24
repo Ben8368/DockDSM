@@ -42,7 +42,7 @@ PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前�
 
 ## 检查覆盖
 
-- **Docs governance**：文档预算/链接、品牌与来源、署名 hook、全树编码/空白、CI 策略回归。
+- **Docs governance**：文档预算/链接、品牌与来源、署名 hook、全树编码/空白、CI 策略、派单边界与 Jules setup 离线回归。
 - **Lint**：Bash syntax、ShellCheck、Hadolint、JSON/YAML 重复键、校验下载的 Actionlint、整个根提交 whitespace。
 - **Synthetic regression tests**：原生 amd64、arm64 runner 上的 PAT 获取策略、包诊断、Surveillance 安装门禁、clock、image/installer/runtime 等；包含 `tests/bootloader-component-admission.py` 离线准入与 tree 身份/故障注入检查；不获取上游组件，不运行真实 `--strict` 来使阻断清单拖垮开发 CI。夹具不下载 DSM，installer 在可丢弃 runner 上使用 sudo 恢复属主与特殊文件。
 - **QEMU patch apply**：固定 QEMU v8.2.2，检查主来源及 GitHub mirror 回退、源码身份和补丁干净应用。
@@ -101,7 +101,7 @@ git diff --check
 - **Dependabot**：版本更新 PR limit=0，避免与 Renovate 重复；保留 Alerts 与 security updates，安全修复 PR 仍须 CI 和人工合并。
 - **Renovate**：按[分阶段迁移](renovate-migration.md)准备受控接入；配置先要求所有普通更新经 Dashboard 批准，安全修复归属和切换条件由该文档定义。启用及验收状态只见 [CONTEXT](../CONTEXT.md)。
 - **CodeRabbit**：自动审查面向 master 的非 draft PR；合入前须其 commit status 为 success，但不写入 branch protection required checks。低风险 PR 原生自动修复条件见[机器人操作约定](bot-automation.md)，实际启用与证据见 [CONTEXT](../CONTEXT.md)。
-- **Jules / Codex**：维护者小任务表单经 [bot-dispatch](../.github/workflows/bot-dispatch.yml) 校验后派给 Jules；仅 issues:write、不 checkout，不执行外部输入。Codex 接管核心修复；机器人不递归派单，CI 修复不扩大任务范围。
+- **Jules / Codex**：维护者受控工作包表单经 [bot-dispatch](../.github/workflows/bot-dispatch.yml) 校验后派给 Jules；仅 issues:write 与 pull-requests:read，不 checkout，不执行外部输入；分页检查活动 Issue/PR 文件占用与在途上限，类别和回退见[机器人约定](bot-automation.md)。Codex 接管核心修复；机器人不递归派单，CI 修复不扩大任务范围。
 - **Docker Hub description**：删除未使用的 workflow；项目发布渠道为 GHCR，README 变更不再触发无凭据的同步空任务。
 
 不启用自动发布、自动合并、Release Please、Codecov 或重复依赖机器人。

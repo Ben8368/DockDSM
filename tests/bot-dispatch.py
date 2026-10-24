@@ -21,17 +21,28 @@ process.stdin.on('data', chunk => data += chunk);
 process.stdin.on('end', async () => {
   const input = JSON.parse(data);
   const calls = [];
+  let gets = 0;
   const github = {rest: {
     issues: {
-      get: async () => ({data: input.issue}),
+      get: async () => ({data: gets++ && input.latestIssue ? input.latestIssue : input.issue}),
+      listForRepo: 'issues',
       addLabels: async args => {calls.push({kind: 'label', args});}
     },
+    pulls: {list: 'prs', listFiles: 'files'},
     repos: {getCollaboratorPermissionLevel: async args => {
       calls.push({kind: 'permission', username: args.username});
       if (input.permissionError) throw Error('permission lookup failed');
       return {data: {permission: input.permissions[args.username] || 'read'}};
     }}
   }};
+  github.paginate = async (method, args) => {
+    calls.push({kind: 'list', method, args});
+    if (input.listError === method) throw Error('list lookup failed');
+    if (method === 'issues') return input.activeIssues || [];
+    if (method === 'prs') return input.prs || [];
+    if (method === 'files') return (input.files || {})[args.pull_number] || [];
+    throw Error('Unexpected API');
+  };
   const context = {repo: {owner: 'fixture-owner', repo: 'fixture-repo'}, actor: input.actor,
     payload: {issue: {number: 42}}};
   try {
@@ -50,8 +61,10 @@ class DispatchTests(unittest.TestCase):
         self.body = ('### Task category\n\nDocumentation\n\n'
                      '### Allowed paths\n\nreadme.md\n\n'
                      '### Requested change\n\nFix the documented typo.\n\n'
+                     '### Acceptance criteria\n\nOnly the typo changes; checks pass.\n\n'
                      '### Validation command\n\npython3 scripts/governance-docs-check.py\n\n'
-                     '### Authorization\n\n- [x] I authorize Jules to implement only this scoped task.')
+                     '### Authorization\n\n- [x] I authorize Jules to implement only this scoped task.\n'
+                     '- [x] I verified dependencies, available quota, and exclusive file ownership.')
         self.input = {'script': SCRIPT, 'actor': 'maintainer',
                       'permissions': {'maintainer': 'admin'},
                       'issue': {'number': 42, 'state': 'open', 'user': {'login': 'maintainer'},
@@ -76,7 +89,7 @@ class DispatchTests(unittest.TestCase):
     def test_authorized_documentation_and_test_requests(self):
         for category, paths in [('Documentation', 'readme.md'),
                                 ('Documentation', 'README.md'),
-                                ('Tests', 'tests/platform.sh\ntests/healthcheck.sh')]:
+                                ('Tests', 'tests/governance-docs.py\ntests/package-readiness.py')]:
             with self.subTest(category=category):
                 self.input['issue']['body'] = self.body.replace('Documentation', category).replace('readme.md', paths)
                 self.run_dispatch(True)
@@ -85,7 +98,7 @@ class DispatchTests(unittest.TestCase):
         for paths in ('tests/a.py\ntests/b.sh\ndocs/howto.md',
                       'docs/guides/setup.md'):
             with self.subTest(paths=paths):
-                self.input['issue']['body'] = self.body.replace('readme.md', paths)
+                self.input['issue']['body'] = self.body.replace('readme.md', paths).replace('Documentation', 'Tests')
                 self.run_dispatch(True)
 
     def test_live_permission_is_required_for_author_and_actor(self):
@@ -137,7 +150,7 @@ class DispatchTests(unittest.TestCase):
     def test_protected_and_already_dispatched_tasks(self):
         for name in ('risk:high', 'security', 'data-loss', 'arm64', 'qemu',
                      'needs:hardware-test', 'hardware-testing', 'phase-acceptance',
-                     'agent:codex', 'jules', 'dependencies', 'ci'):
+                     'agent:codex', 'jules', 'dependencies', 'ci', 'docker', 'guest'):
             with self.subTest(name=name):
                 self.input['issue']['labels'] = [{'name': 'bot:request'}, {'name': name}]
                 self.run_dispatch(False)
@@ -154,10 +167,48 @@ class DispatchTests(unittest.TestCase):
                 self.input['issue']['body'] = self.body.replace('readme.md', path)
                 self.run_dispatch(False)
 
+    def test_nested_protected_test_paths_cannot_bypass_exclusions(self):
+        """The Tests allowlist keeps protected families blocked at every nesting depth."""
+        paths = (
+            'tests/nested/qemu-x.sh',
+            'tests/nested/surveillance-probe.py',
+            'tests/nested/arm-runtime.py',
+            'tests/nested/production-check.py',
+            'tests/nested/official-pat.py',
+            'tests/nested/bootloader-audit.py',
+            'tests/nested/ci-policy.py',
+            'tests/nested/bot-dispatch-extra.py',
+            'tests/nested/jules-setup-helper.py',
+            'tests/nested/proprietary-check.py',
+            'tests/nested/x86-installer-check.py',
+            'tests/nested/platform.snapshot.py',
+            'tests/nested/more/fixtures/sample.py',
+            'tests/nested/more/dev/helper.sh',
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace('readme.md', path)
+                self.run_dispatch(False)
+
+    def test_pat_acquisition_wrapper_is_excluded_at_any_depth(self):
+        """The dispatch wrapper is protected, while unrelated nested tests remain eligible."""
+        for path in ('tests/pat-acquisition.sh',
+                     'tests/nested/pat-acquisition.sh',
+                     'tests/nested/more/pat-acquisition.sh'):
+            with self.subTest(path=path):
+                self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace('readme.md', path)
+                self.run_dispatch(False)
+
+        self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace(
+            'readme.md', 'tests/nested/ordinary-regression.py')
+        self.run_dispatch(True)
+
     def test_missing_fields_approval_and_ambiguous_headings(self):
         for body in (None, '', self.body.replace('[x]', '[ ]'),
                      self.body.replace('Documentation', 'Runtime'),
                      self.body.replace('### Validation command', '### Missing command'),
+                     self.body.replace('### Acceptance criteria', '### Missing criteria'),
+                     self.body.replace('[x] I verified', '[ ] I verified'),
                      self.body + '\n### Allowed paths\nreadme.md'):
             with self.subTest(body=body):
                 self.input['issue']['body'] = body
@@ -173,7 +224,9 @@ class DispatchTests(unittest.TestCase):
         self.assertIn('permission lookup failed', output['error'])
 
     def test_workflow_uses_minimal_permissions_and_no_checkout(self):
-        self.assertEqual(WORKFLOW['permissions'], {'issues': 'write'})
+        self.assertEqual(WORKFLOW['permissions'], {'issues': 'write', 'pull-requests': 'read'})
+        self.assertEqual(WORKFLOW['concurrency']['group'], 'bot-dispatch-${{ github.repository }}')
+        self.assertEqual(WORKFLOW['concurrency']['cancel-in-progress'], 'false')
         self.assertEqual(WORKFLOW['on']['issues']['types'], ['opened', 'labeled', 'reopened'])
         self.assertEqual(len(WORKFLOW['jobs']['dispatch']['steps']), 1)
         self.assertRegex(WORKFLOW['jobs']['dispatch']['steps'][0]['uses'],
@@ -181,6 +234,85 @@ class DispatchTests(unittest.TestCase):
         self.assertNotIn('$' + '{{', SCRIPT)
         template = yaml.safe_load((ROOT / '.github/ISSUE_TEMPLATE/0-bot-task.yml').read_text(encoding='utf-8'))
         self.assertEqual(template['labels'], ['bot:request'])
+        category = next(item for item in template['body'] if item.get('id') == 'category')
+        self.assertEqual(category['attributes']['options'], ['Documentation', 'Tests', 'Tooling'])
+
+    def test_tooling_requires_admitted_bundle_and_implementation(self):
+        """Only the admitted tool and its companion files can enter Tooling."""
+        for paths, accepted in (
+            ('scripts/dev/summarize-test-results.py', True),
+            ('scripts/dev/summarize-test-results.py\ntests/dev/summarize-test-results.py\ndocs/dev/test-results.md', True),
+            ('tests/dev/summarize-test-results.py', False),
+            ('scripts/dev/arbitrary.py', False),
+            ('scripts/jules-setup.sh', False),
+            ('scripts/check-bootloader-admission.py', False),
+            ('scripts/dev/summarize-test-results.py\nreadme.md', False),
+            ('scripts/dev/summarize-test-results.py\n' * 7, False),
+        ):
+            with self.subTest(paths=paths):
+                self.input['issue']['body'] = self.body.replace('Documentation', 'Tooling').replace('readme.md', paths)
+                self.run_dispatch(accepted)
+
+    def test_categories_cannot_bypass_protected_paths(self):
+        """A test extension or documentation category is not permission to edit a gate."""
+        for category in ('Documentation', 'Tests', 'Tooling'):
+            for path in ('tests/bootloader-component-admission.py', 'tests/bot-dispatch.py',
+                         'tests/ci-policy.py', 'tests/jules-setup.py', 'tests/arm-runtime.py', 'tests/platform.sh',
+                         'docs/bot-automation.md', 'docs/jules-environment.md',
+                         'docs/implementation-plan.md', 'docs/dependency-locks.md',
+                         'readme.md\nreadme.md'):
+                with self.subTest(category=category, path=path):
+                    self.input['issue']['body'] = self.body.replace('Documentation', category).replace('readme.md', path)
+                    self.run_dispatch(False)
+
+    def test_open_task_scopes_and_pilot_capacity(self):
+        """Reserve paths until issues close; unknown scope fails closed."""
+        other = {'number': 10, 'body': self.body.replace('readme.md', 'docs/other.md')}
+        for active, accepted in (([other], True),
+                                 ([{**other, 'number': n} for n in range(3)], True),
+                                 ([{**other, 'number': n} for n in range(4)], False),
+                                 ([{'number': 10, 'body': self.body}], False),
+                                 ([{'number': 10, 'body': ''}], False),
+                                 ([{'number': 10, 'body': self.body.replace('readme.md', 'docs/**')}], False),
+                                 ([self.input['issue']], True)):
+            with self.subTest(active=active):
+                self.input['activeIssues'] = active
+                self.run_dispatch(accepted)
+
+    def test_all_open_pr_files_and_renames_reserve_paths(self):
+        """Check unlabelled PRs too, including old paths of renamed files."""
+        self.input['prs'] = [{'number': 9, 'labels': []}]
+        for files, accepted in (([{'filename': 'docs/other.md'}], True),
+                                 ([{'filename': 'readme.md'}], False),
+                                 ([{'filename': 'other.md', 'previous_filename': 'readme.md'}], False),
+                                 ([{'filename': 'other.md'}] * 3000, False)):
+            with self.subTest(count=len(files), accepted=accepted):
+                self.input['files'] = {'9': files}
+                self.run_dispatch(accepted)
+
+    def test_pr_backlog_stops_dispatch(self):
+        """Count all open Jules PRs conservatively, including drafts."""
+        self.input['prs'] = [{'number': n, 'labels': [{'name': 'jules'}], 'draft': True}
+                             for n in range(5)]
+        self.run_dispatch(False)
+        self.input['prs'].pop()
+        self.run_dispatch(True)
+
+    def test_scope_lookup_failures_do_not_write_labels(self):
+        """Incomplete remote evidence never permits dispatch."""
+        self.input['prs'] = [{'number': 9, 'labels': []}]
+        for method in ('issues', 'prs', 'files'):
+            with self.subTest(method=method):
+                self.input['listError'] = method
+                self.run_dispatch(False, expect_error=True)
+
+    def test_issue_changed_during_check_is_rejected(self):
+        """Recheck body, state and ownership immediately before requesting Jules."""
+        for patch in ({'body': self.body + '\nchanged'}, {'state': 'closed'},
+                      {'labels': []}, {'labels': [{'name': 'bot:request'}, {'name': 'jules'}]}):
+            with self.subTest(patch=patch):
+                self.input['latestIssue'] = {**self.input['issue'], **patch}
+                self.run_dispatch(False)
 
 
 if __name__ == '__main__':

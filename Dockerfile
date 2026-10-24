@@ -33,6 +33,7 @@ RUN <<EOF
   apt-get update
   apt-get --no-install-recommends -y install \
     fakeroot \
+    ca-certificates \
     xz-utils \
     tar \
     e2fsprogs \

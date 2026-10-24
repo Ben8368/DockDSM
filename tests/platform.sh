@@ -14,7 +14,7 @@ finalizeMemory() { :; }
 unset DSM_PLATFORM PLATFORM QEMU_BIN MACHINE BOOT_MODE
 platformInit
 [[ "$DSM_PLATFORM:$GUEST_ARCH:$PLATFORM:$QEMU_BIN:$MACHINE:$BOOT_MODE" == virtualdsm:amd64:x64:qemu-system-x86_64:q35:legacy ]]
-# Original x86 argument snapshot and unchanged config/serial/PAT helpers.
+# Original x86 argument snapshot and pinned config/serial/shared PAT helpers.
 # Installer state preservation is exercised by x86-installer-regression.py.
 bash tests/fixtures/x86-baseline.sh > "$tmp/x86.args"
 diff -u tests/fixtures/virtualdsm.args "$tmp/x86.args"
