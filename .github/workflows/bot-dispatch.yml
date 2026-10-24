@@ -67,7 +67,8 @@ jobs:
               !/^docs\/(?:ci|platforms|arm64[^/]*|arc[^/]*|runtime[^/]*)\.md$/.test(path) &&
               !protectedDocs.has(path.slice(5, -3));
             const safeTest = path => /^tests\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:py|sh)$/.test(path) &&
-              !/^tests\/(?:[a-z0-9_-]+\/)*(?:dev\/|fixtures\/|qemu|surveillance|arm|production|official|bootloader|ci-|bot-dispatch|jules-setup|proprietary|x86-installer|platform\.)/.test(path);
+              !/^tests\/(?:[a-z0-9_-]+\/)*(?:dev\/|fixtures\/|qemu|surveillance|arm|production|official|bootloader|ci-|bot-dispatch|jules-setup|proprietary|x86-installer|platform\.)/.test(path) &&
+              !/^tests\/(?:[a-z0-9_-]+\/)*pat-acquisition\.sh$/.test(path);
             const safePath = path => category === 'Documentation' ? safeDoc(path) :
               category === 'Tests' ? safeTest(path) || safeDoc(path) : toolPaths.has(path);
             if (!['Documentation', 'Tests', 'Tooling'].includes(category) ||
