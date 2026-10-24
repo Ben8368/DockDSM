@@ -18,7 +18,7 @@ run_case() (
   mkdir "$STORAGE"
   printf 'existing user state' > "$STORAGE/sentinel.img"
   case "$scenario" in
-    default-offline) expected_probes=6 ;;
+    default-offline|tls-failure) expected_probes=6 ;;
     timezone-cn) TZ=Asia/Shanghai; expected_host=cndl.synology.cn ;;
     country-cn) COUNTRY=CN; expected_host=cndl.synology.cn ;;
     detected-us) expected_probes=1 ;;
@@ -46,7 +46,13 @@ run_case() (
   df() { printf 'Avail\n17179869184\n'; }
   curl() {
     printf 'probe\n' >> "$STORAGE/probes"
-    [[ "$scenario" != default-offline ]] || return 6
+    [[ "$1" == -m && "$2" == 5 && "$3" == -H && "$4" == 'Accept: application/json' ]] || {
+      error 'Country probe must retain its timeout and JSON request headers'; return 99;
+    }
+    [[ " $* " != *' -k '* && " $* " != *' --insecure '* ]] || {
+      error 'Country probe must keep TLS certificate verification enabled'; return 99;
+    }
+    [[ "$scenario" != default-offline && "$scenario" != tls-failure ]] || return 60
     printf 'fixture geolocation\n'
   }
   jq() {
@@ -81,7 +87,7 @@ run_case() (
   [[ -z "$(find "$STORAGE" -maxdepth 1 -name '.rtd1619b-install-*' -print)" ]]
 )
 
-for scenario in default-offline timezone-cn country-cn detected-us invalid-country explicit-url cache-hit invalid-cache; do
+for scenario in default-offline tls-failure timezone-cn country-cn detected-us invalid-country explicit-url cache-hit invalid-cache; do
   run_case "$scenario"
 done
-echo 'ARM mirror regression passed: default install dispatch, optional TZ, country detection/fallback, explicit URL and cache protection.'
+echo 'ARM mirror regression passed: TLS failures fall back to the global mirror; timeout, dispatch, explicit URL and cache protection remain intact.'

@@ -30,6 +30,11 @@ class SetupTests(unittest.TestCase):
         self.stub('git', 'exit 0')
         self.stub('shellcheck', 'exit 0')
         self.stub('venv-python', '''printf '%s\\n' "$*" >> "$CALLS"
+if [[ "$1" == -c ]]; then
+  printf '%s\\n' "${VENV_PYTHON_VERSION:-3.11}.0 (test fixture)"
+  [[ ${VENV_PYTHON_VERSION:-3.11} != 3.10 ]]
+  exit $?
+fi
 if [[ "$*" == *pip* && ${FAIL_INSTALL:-0} == 1 ]]; then exit 17; fi
 if [[ "$*" == scripts/governance-docs-check.py && ${FAIL_CHECK:-0} == 1 ]]; then exit 19; fi
 ''')
@@ -81,6 +86,33 @@ fi
         self.assertNotIn('pip', calls)
         self.assertNotIn('-m venv', calls)
         self.assertIn('tests/bot-dispatch.py', calls)
+
+    def test_check_rejects_python_310_venv_before_dependencies_or_gates(self):
+        """The venv interpreter must meet the minimum before any check executes."""
+        result, _ = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.log.unlink()
+        self.env['VENV_PYTHON_VERSION'] = '3.10'
+        result, calls = self.run_setup('--check')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('3.10.0', result.stdout)
+        self.assertEqual(sum(line.startswith('-c import sys;') for line in calls.splitlines()), 1)
+        self.assertNotIn('yaml', calls)
+        self.assertNotIn('governance-docs-check.py', calls)
+        self.assertNotIn('tests/governance-docs.py', calls)
+        self.assertNotIn('tests/bot-dispatch.py', calls)
+
+    def test_check_accepts_python_311_venv_without_installing(self):
+        """Python 3.11 passes while --check still avoids dependency installation."""
+        result, _ = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.log.unlink()
+        self.env['VENV_PYTHON_VERSION'] = '3.11'
+        result, calls = self.run_setup('--check')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('3.11.0', result.stdout)
+        self.assertNotIn('pip', calls)
+        self.assertNotIn('-m venv', calls)
 
     def test_install_and_gate_failures_preserve_exit_codes(self):
         """Dependency or baseline failures must prevent a successful snapshot message."""

@@ -31,6 +31,7 @@ if [[ ! -x "$python" ]]; then
   echo "Missing .venv/jules; run setup without --check first." >&2
   exit 2
 fi
+"$python" -c 'import sys; print(sys.version); sys.exit(0 if sys.version_info >= (3, 11) else 2)'
 "$python" -c 'import yaml; assert yaml.__version__ == "6.0.3", yaml.__version__'
 "$python" scripts/governance-docs-check.py
 "$python" tests/governance-docs.py
