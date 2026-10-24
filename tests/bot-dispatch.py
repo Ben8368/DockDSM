@@ -190,6 +190,19 @@ class DispatchTests(unittest.TestCase):
                 self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace('readme.md', path)
                 self.run_dispatch(False)
 
+    def test_pat_acquisition_wrapper_is_excluded_at_any_depth(self):
+        """The dispatch wrapper is protected, while unrelated nested tests remain eligible."""
+        for path in ('tests/pat-acquisition.sh',
+                     'tests/nested/pat-acquisition.sh',
+                     'tests/nested/more/pat-acquisition.sh'):
+            with self.subTest(path=path):
+                self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace('readme.md', path)
+                self.run_dispatch(False)
+
+        self.input['issue']['body'] = self.body.replace('Documentation', 'Tests').replace(
+            'readme.md', 'tests/nested/ordinary-regression.py')
+        self.run_dispatch(True)
+
     def test_missing_fields_approval_and_ambiguous_headings(self):
         for body in (None, '', self.body.replace('[x]', '[ ]'),
                      self.body.replace('Documentation', 'Runtime'),
