@@ -1,0 +1,164 @@
+diff --git a/files/p1/boot/grub/grub.cfg b/files/p1/boot/grub/grub.cfg
+--- a/files/p1/boot/grub/grub.cfg
++++ b/files/p1/boot/grub/grub.cfg
+@@ -32,7 +32,9 @@
+ function load_video {
+   if [ "${grub_platform}" = "efi" ]; then
+     insmod efi_gop
+-    insmod efi_uga
++    if [ "${grub_cpu}" != "arm64" ]; then
++      insmod efi_uga
++    fi
+   else
+     insmod vbe
+     insmod vga
+@@ -70,15 +72,37 @@
+ 
+ # Menu on serial, output only: any byte on an input terminal cancels the
+ # timeout, and noise on an unconnected serial line would stop autoboot
+-if serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1; then
+-  terminal_output --append serial
++if [ "${grub_cpu}" = "arm64" ]; then
++  if [ -n "${arm64_serial_port}" ]; then
++    if serial --port="${arm64_serial_port}" --speed=115200 --word=8 --parity=no --stop=1; then
++      terminal_output --append serial
++    fi
++  fi
++else
++  if serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1; then
++    terminal_output --append serial
++  fi
+ fi
+ 
+ function gfxmode {
+     set gfxpayload="${linux_gfx_mode}"
+ }
+ 
+-set ARC_CMDLINE="earlyprintk earlycon=uart8250,io,0x3f8,115200n8 console=ttyS0,115200n8 root=/dev/ram rootwait intremap=off amd_iommu_intr=legacy net.ifnames=0 panic=5 split_lock_detect=off pcie_aspm=off intel_pstate=disable amd_pstate=disable nox2apic nomodeset nowatchdog"
++if [ "${grub_cpu}" = "arm64" ]; then
++  set ARC_CMDLINE="${arm64_cmdline}"
++  if [ -z "${ARC_CMDLINE}" ]; then
++    set ARC_CMDLINE="rdinit=/init panic=5 loglevel=7"
++  fi
++  set ARC_KERNEL="/Image-${system_version}"
++  set DSM_KERNEL="/zImage-dsm"
++  if [ -s /Image-dsm ]; then
++    set DSM_KERNEL="/Image-dsm"
++  fi
++else
++  set ARC_CMDLINE="earlyprintk earlycon=uart8250,io,0x3f8,115200n8 console=ttyS0,115200n8 root=/dev/ram rootwait intremap=off amd_iommu_intr=legacy net.ifnames=0 panic=5 split_lock_detect=off pcie_aspm=off intel_pstate=disable amd_pstate=disable nox2apic nomodeset nowatchdog"
++  set ARC_KERNEL="/bzImage-${system_version}"
++  set DSM_KERNEL="/zImage-dsm"
++fi
+ 
+ insmod part_gpt
+ insmod part_msdos
+@@ -87,7 +111,7 @@
+ search --set=root --label "ARC3" --no-floppy
+ if [ -e /initrd-user ]; then set ARCU=/initrd-user; fi
+ 
+-if [ -s /zImage-dsm -a -s /initrd-dsm ]; then
++if [ -s ${DSM_KERNEL} -a -s /initrd-dsm ]; then
+   if [ "${default}" = "direct" ]; then
+     set timeout="1"
+     if [ -s ${prefix}/rsysenv ]; then
+@@ -95,7 +119,7 @@
+     fi
+     menuentry 'Direct DSM Mode' --id direct {
+       set gfxpayload="${linux_gfx_mode}"
+-      echo "Arc Version: ${arc_version}"
++      echo "DockDSM Version: ${arc_version}"
+       echo ""
+       echo -n "Boot Time: "; date
+       echo ""
+@@ -108,65 +132,65 @@
+       echo "MEM:     ${sys_mem}"
+       echo ""
+       echo "Loading DSM Kernel..."
+-      linux /zImage-dsm ${dsm_cmdline}
++      linux ${DSM_KERNEL} ${dsm_cmdline}
+       echo "Loading DSM Ramdisk..."
+       initrd /initrd-dsm
+       echo "Booting DSM Mode..."
+       echo "Try http://find.synology.com/ to connect the DSM via web."
+     }
+   fi
+-  menuentry 'Arc DSM Mode' --id dsm {
++  menuentry 'DockDSM Mode' --id dsm {
+     gfxmode
+-    echo "Loading Arc Kernel..."
+-    linux /bzImage-${system_version} ${ARC_CMDLINE} dsm_arc
+-    echo "Loading Arc Ramdisk..."
++    echo "Loading DockDSM Kernel..."
++    linux ${ARC_KERNEL} ${ARC_CMDLINE} dsm_arc
++    echo "Loading DockDSM initrd..."
+     initrd /initrd-${system_version} ${ARCU}
+     echo "Booting DSM Mode..."
+   }
+ fi
+ 
+ if [ -e /automated ]; then
+-  menuentry 'Arc Automated Mode' --id automated {
++  menuentry 'DockDSM Automated Mode' --id automated {
+     gfxmode
+-    echo "Loading Arc Kernel..."
+-    linux /bzImage-${system_version} ${ARC_CMDLINE} automated_arc
+-    echo "Loading Arc Ramdisk..."
++    echo "Loading DockDSM Kernel..."
++    linux ${ARC_KERNEL} ${ARC_CMDLINE} automated_arc
++    echo "Loading DockDSM initrd..."
+     initrd /initrd-${system_version} ${ARCU}
+     echo "Booting..."
+   }
+ fi
+ 
+-menuentry 'Arc Config Mode' --id config {
++menuentry 'DockDSM Configuration Mode' --id config {
+   gfxmode
+-  echo "Loading Arc Kernel..."
+-  linux /bzImage-${system_version} ${ARC_CMDLINE} force_arc
+-  echo "Loading Arc Ramdisk..."
++  echo "Loading DockDSM Kernel..."
++  linux ${ARC_KERNEL} ${ARC_CMDLINE} force_arc
++  echo "Loading DockDSM initrd..."
+   initrd /initrd-${system_version} ${ARCU}
+-  echo "Booting Config Mode..."
++  echo "Booting DockDSM Configuration Mode..."
+ }
+ 
+-if [ -s /zImage-dsm -a -s /initrd-dsm ]; then
+-  menuentry 'Arc Update Mode' --id update {
++if [ -s ${DSM_KERNEL} -a -s /initrd-dsm ]; then
++  menuentry 'DockDSM Update Mode' --id update {
+     gfxmode
+-    echo "Loading Arc Kernel..."
+-    linux /bzImage-${system_version} ${ARC_CMDLINE} update_arc
+-    echo "Loading Arc Ramdisk..."
++    echo "Loading DockDSM Kernel..."
++    linux ${ARC_KERNEL} ${ARC_CMDLINE} update_arc
++    echo "Loading DockDSM initrd..."
+     initrd /initrd-${system_version} ${ARCU}
+     echo "Booting Update Mode..."
+   }
+   menuentry 'DSM Recovery Mode' --id recovery {
+     gfxmode
+-    echo "Loading Arc Kernel..."
+-    linux /bzImage-${system_version} ${ARC_CMDLINE} recovery
+-    echo "Loading Arc Ramdisk..."
++    echo "Loading DockDSM Kernel..."
++    linux ${ARC_KERNEL} ${ARC_CMDLINE} recovery
++    echo "Loading DockDSM initrd..."
+     initrd /initrd-${system_version} ${ARCU}
+     echo "Booting Recovery Mode..."
+   }
+   menuentry 'DSM Reinstall Mode' --id junior {
+     gfxmode
+-    echo "Loading Arc Kernel..."
+-    linux /bzImage-${system_version} ${ARC_CMDLINE} force_junior
+-    echo "Loading Arc Ramdisk..."
++    echo "Loading DockDSM Kernel..."
++    linux ${ARC_KERNEL} ${ARC_CMDLINE} force_junior
++    echo "Loading DockDSM initrd..."
+     initrd /initrd-${system_version} ${ARCU}
+     echo "Booting Reinstall Mode..."
+   }

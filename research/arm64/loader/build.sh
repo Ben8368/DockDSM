@@ -6,6 +6,24 @@ external="$repo_root/research/arm64/loader"
 buildroot=${BUILDROOT_DIR:-}
 output=${OUTPUT_DIR:-}
 downloads=${DOWNLOADS_DIR:-}
+defconfig=${DEFCONFIG:-dockdsm_arm64_kexec_defconfig}
+
+case "$defconfig" in
+  dockdsm_arm64_kexec_defconfig)
+    build_marker=dockdsm-arm64-kexec-v1
+    marker_file=.dockdsm-arm64-kexec-build
+    ;;
+  dockdsm_arm64_grub_defconfig)
+    build_marker=dockdsm-arm64-grub-v1
+    marker_file=.dockdsm-arm64-grub-build
+    ;;
+  *)
+    echo 'ERROR: DEFCONFIG must be dockdsm_arm64_kexec_defconfig or dockdsm_arm64_grub_defconfig.' >&2
+    exit 2
+    ;;
+esac
+defconfig_path="$external/configs/$defconfig"
+defconfig_target=${defconfig%.defconfig}
 
 [[ -n "$buildroot" && -f "$buildroot/Makefile" ]] || {
   echo 'ERROR: set BUILDROOT_DIR to the verified Buildroot source.' >&2
@@ -17,7 +35,7 @@ downloads=${DOWNLOADS_DIR:-}
 }
 python3 "$repo_root/research/buildroot/check_inputs.py" \
   --buildroot "$buildroot" \
-  --defconfig "$external/configs/dockdsm_arm64_kexec_defconfig"
+  --defconfig "$defconfig_path"
 [[ -n "$output" && "$output" != / ]] || {
   echo 'ERROR: set OUTPUT_DIR to a dedicated external build directory.' >&2
   exit 2
@@ -40,16 +58,16 @@ case "$output/" in
   "$repo_root/"*) echo 'ERROR: OUTPUT_DIR must be outside the repository.' >&2; exit 2 ;;
 esac
 [[ -n "$downloads" ]] || downloads="$output/downloads"
-marker="$output/.dockdsm-arm64-kexec-build"
+marker="$output/$marker_file"
 if [[ -e "$marker" ]]; then
-  [[ "$(<"$marker")" == dockdsm-arm64-kexec-v1 ]] || {
+  [[ "$(<"$marker")" == "$build_marker" ]] || {
     echo 'ERROR: output marker does not match this build.' >&2; exit 2;
   }
 elif [[ -n "$(find "$output" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
   echo 'ERROR: OUTPUT_DIR is nonempty and has no DockDSM build marker; refusing to reuse it.' >&2
   exit 2
 else
-  printf '%s\n' dockdsm-arm64-kexec-v1 > "$marker"
+  printf '%s\n' "$build_marker" > "$marker"
 fi
 
 jobs=${JOBS:-4}
@@ -57,17 +75,26 @@ jobs=${JOBS:-4}
 mkdir -p -- "$downloads"
 downloads=$(cd -- "$downloads" && pwd -P)
 make -C "$buildroot" O="$output" BR2_EXTERNAL="$external" BR2_DL_DIR="$downloads" \
-  dockdsm_arm64_kexec_defconfig
+  "$defconfig_target"
 make -C "$buildroot" O="$output" BR2_EXTERNAL="$external" BR2_DL_DIR="$downloads" olddefconfig
 python3 "$repo_root/research/buildroot/check_inputs.py" \
   --buildroot "$buildroot" \
-  --defconfig "$external/configs/dockdsm_arm64_kexec_defconfig" \
+  --defconfig "$defconfig_path" \
   --config "$output/.config"
 make -C "$buildroot" O="$output" BR2_EXTERNAL="$external" BR2_DL_DIR="$downloads" dependencies
 
 grep -qx 'BR2_aarch64=y' "$output/.config"
 grep -qx 'BR2_PACKAGE_KEXEC=y' "$output/.config"
 grep -qx 'BR2_TARGET_ROOTFS_CPIO=y' "$output/.config"
+if [[ "$defconfig" == dockdsm_arm64_grub_defconfig ]]; then
+  for required in BR2_TARGET_GRUB2=y BR2_TARGET_GRUB2_ARM64_EFI=y \
+    BR2_PACKAGE_HOST_GENIMAGE=y BR2_PACKAGE_HOST_DOSFSTOOLS=y BR2_PACKAGE_HOST_MTOOLS=y; do
+    grep -Fqx "$required" "$output/.config" || {
+      echo "ERROR: GRUB Buildroot config is missing $required." >&2
+      exit 1
+    }
+  done
+fi
 
 make -C "$buildroot" O="$output" BR2_EXTERNAL="$external" BR2_DL_DIR="$downloads" -j"$jobs"
 kernel_config=$(find "$output/build" -maxdepth 4 -type f -path '*/linux-*/.config' -print -quit)
@@ -96,4 +123,10 @@ for artifact in Image dockdsm-loader.cpio.gz dockdsm-target.cpio.gz; do
     exit 1
   }
 done
+if [[ "$defconfig" == dockdsm_arm64_grub_defconfig ]]; then
+  [[ -s "$output/images/dockdsm-arm64-grub.img" ]] || {
+    echo 'ERROR: Buildroot did not produce images/dockdsm-arm64-grub.img.' >&2
+    exit 1
+  }
+fi
 printf 'Buildroot loader artifacts: %s/images\n' "$output"

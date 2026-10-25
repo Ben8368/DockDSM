@@ -1,0 +1,268 @@
+diff --git a/files/initrd/opt/arc/arc-functions.sh b/files/initrd/opt/arc/arc-functions.sh
+index b232c52..388af57 100644
+--- a/files/initrd/opt/arc/arc-functions.sh
++++ b/files/initrd/opt/arc/arc-functions.sh
+@@ -340,7 +340,7 @@ function arcVersion() {
+     ARC_MODE=$([ $? -eq 0 ] && echo "automated" || echo "config")
+   fi
+ 
+-  dialog --backtitle "$(backtitle)" --title "Arc Config" \
++  dialog --backtitle "$(backtitle)" --title "DockDSM Configuration" \
+     --infobox "Reconfiguring Addons, Modules and Synoinfo" 3 60
+ 
+   ADDONS="$(readConfigKey "addons" "${USER_CONFIG_FILE}")"
+@@ -397,7 +397,7 @@ function arcPatch() {
+       2 "Use random SN/Mac (Reduced DSM Features)"
+       3 "Use my own SN/Mac (Be sure your Data is valid)"
+     )
+-    [ "${#SN}" -eq 13 ] && OPTIONS=(1 "Use Arc Patch (AME, QC, Push Notify and more)" "${OPTIONS[@]}")
++    [ "${#SN}" -eq 13 ] && OPTIONS=(1 "Use DockDSM Patch (AME, QC, Push Notify and more)" "${OPTIONS[@]}")
+ 
+     dialog --clear --backtitle "$(backtitle)" \
+       --nocancel --title "SN/Mac Options" \
+@@ -523,7 +523,7 @@ function arcSettings() {
+     if [ "${ARC_MODE}" = "config" ]; then
+       dialog --clear --backtitle "$(backtitle)" --title "Config done" \
+         --no-cancel --menu "Build now?" 7 40 0 \
+-        1 "Yes - Build Arc Loader now" \
++        1 "Yes - Build DockDSM Bootloader now" \
+         2 "No - I want to make changes" \
+       2>"${TMP_PATH}/resp"
+       resp="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+@@ -678,7 +678,7 @@ function juniorboot() {
+       makearc
+     fi
+   else
+-    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
++    dialog --backtitle "$(backtitle)" --title "DockDSM Boot" \
+       --infobox "Booting DSM Reinstall Mode...\nPlease stay patient!" 4 30
+     sleep 3
+     rebootTo junior
+@@ -698,7 +698,7 @@ function bootcheck() {
+       makearc
+     fi
+   else
+-    dialog --backtitle "$(backtitle)" --title "Arc Boot" \
++    dialog --backtitle "$(backtitle)" --title "DockDSM Boot" \
+       --infobox "Booting DSM...\nPlease stay patient!" 4 25
+     sleep 2
+     exec reboot
+@@ -1470,15 +1470,15 @@ function backupMenu() {
+         1 "Restore Loader (from DSM Disk)" \
+         2 "Restore Hardware Key (local)" \
+         3 "Backup Hardware Key (local)" \
+-        4 "Restore Arc Config (from Online)" \
+-        5 "Backup Arc Config (to Online)" \
++        4 "Restore DockDSM Config (from Online)" \
++        5 "Backup DockDSM Config (to Online)" \
+         2>"${TMP_PATH}/resp"
+     elif [ -n "${USERID}" ] && [ "${ARC_OFFLINE}" != "true" ]; then
+       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+         1 "Restore Loader (from DSM Disk)" \
+         2 "Restore Hardware Key (local)" \
+         3 "Backup Hardware Key (local)" \
+-        4 "Restore Arc Config (from Online)" \
++        4 "Restore DockDSM Config (from Online)" \
+         2>"${TMP_PATH}/resp"
+     else
+       dialog --backtitle "$(backtitle)" --title "Backup" --cancel-label "Exit" --menu "Choose an Option" 0 0 0 \
+@@ -1492,7 +1492,7 @@ function backupMenu() {
+       1)
+         DSMROOTS="$(findDSMRoot)"
+         if [ -z "${DSMROOTS}" ]; then
+-          dialog --backtitle "$(backtitle)" --title "Restore Arc Config" \
++          dialog --backtitle "$(backtitle)" --title "Restore DockDSM Config" \
+             --msgbox "No DSM system found!\nPlease insert all disks before continuing." 0 0
+           return 1
+         fi
+@@ -1566,7 +1566,7 @@ function backupMenu() {
+           SN="$(readConfigKey "sn" "${USER_CONFIG_FILE}")"
+           TEXT+="\nSerial: ${SN}"
+           ARC_PATCH="$(readConfigKey "arc.patch" "${USER_CONFIG_FILE}")"
+-          TEXT+="\nArc Patch: ${ARC_PATCH}"
++          TEXT+="\nDockDSM Patch: ${ARC_PATCH}"
+           dialog --backtitle "$(backtitle)" --title "Config found" \
+             --aspect 18 --msgbox "${TEXT}" 0 0
+           PLATFORM="$(readConfigKey "platform" "${USER_CONFIG_FILE}")"
+@@ -1575,7 +1575,7 @@ function backupMenu() {
+           resetBuild
+         fi
+         dialog --backtitle "$(backtitle)" --title "Online Restore" \
+-          --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 5 50
++          --aspect 18 --infobox "Restore successful! -> Reload DockDSM Init now" 5 50
+         sleep 2
+         rm -f "${HOME}/.initialized" && exec init.sh
+         ;;
+@@ -1914,7 +1914,7 @@ function sysinfo() {
+     done
+   done
+   # Print Config Informations
+-  TEXT+="\n\n\Z4> Arc: ${ARC_VERSION} (${ARC_BUILD})\Zn"
++  TEXT+="\n\n\Z4> DockDSM: ${ARC_VERSION} (${ARC_BUILD})\Zn"
+   TEXT+="\n"
+   TEXT+="\n  Subversion: \ZbAddons ${ADDONSVERSION} | Configs ${CONFIGSVERSION} | LKM ${LKMVERSION} | Modules ${MODULESVERSION} | Patches ${PATCHESVERSION}\Zn"
+   TEXT+="\n  Config | Build: \Zb${CONFDONE} | ${BUILDDONE}\Zn"
+@@ -1927,8 +1927,8 @@ function sysinfo() {
+     TEXT+="\n"
+     TEXT+="\n  Kernel | LKM: \Zb${KERNEL} (${KVER}) | ${LKM}\Zn"
+     TEXT+="\n  Platform | DeviceTree: \Zb${PLATFORM} | ${DT}\Zn"
+-    TEXT+="\n  Arc Patch: \Zb${ARC_PATCH}\Zn"
+-    TEXT+="\n  Arc Backup: \Zb${ARC_BACKUP}\Zn"
++    TEXT+="\n  DockDSM Patch: \Zb${ARC_PATCH}\Zn"
++    TEXT+="\n  DockDSM Backup: \Zb${ARC_BACKUP}\Zn"
+     TEXT+="\n  Kernelload: \Zb${KERNELLOAD}\Zn"
+     TEXT+="\n  Directboot: \Zb${DIRECTBOOT}\Zn"
+     TEXT+="\n  eMMC Boot: \Zb${EMMCBOOT}\Zn"
+@@ -2169,9 +2169,9 @@ function networkdiag() {
+       ACCESS_TOKEN="$(genAccessToken)"
+       USERIDAPI="$(curl --interface "${N}" -skL -m 10 "https://arc.auxxxilium.tech?hwid=${ACCESS_TOKEN}" 2>/dev/null)"
+       if [[ $? -ne 0 || -z "${USERIDAPI}" ]]; then
+-        echo -e "Arc UserID API not reachable!"
++        echo -e "Upstream UserID API not reachable!"
+       else
+-        echo -e "Arc UserID API reachable!"
++        echo -e "Upstream UserID API reachable!"
+       fi
+       GITHUBAPI=$(curl --interface "${N}" -skL -m 10 "${API_URL}" | jq -r 'if type=="array" then .[].tag_name // empty else empty end' 2>/dev/null | grep -v "dev" | sort -rV | head -1 2>/dev/null)
+       if [[ $? -ne 0 || -z "${GITHUBAPI}" ]]; then
+@@ -3125,7 +3125,7 @@ function greplogs() {
+     MSG+="Please do as follows:\n"
+     MSG+="1. Add dbgutils in addons and rebuild.\n"
+     MSG+="2. Wait 10 minutes after booting.\n"
+-    MSG+="3. Reboot into Arc and go to this option.\n"
++    MSG+="3. Reboot into DockDSM and go to this option.\n"
+   fi
+ 
+   if [ -n "$(ls -A ${TMP_PATH}/logs 2>/dev/null)" ]; then
+@@ -3182,7 +3182,7 @@ function getbackup() {
+ # SataDOM Menu
+ function satadomMenu() {
+   rm -f "${TMP_PATH}/opts" 2>/dev/null
+-  echo "0 \"Create SATA node (ARC)\"" >>"${TMP_PATH}/opts"
++  echo "0 \"Create SATA node (DockDSM)\"" >>"${TMP_PATH}/opts"
+   echo "1 \"Native SATA Disk (SYNO)\"" >>"${TMP_PATH}/opts"
+   echo "2 \"Fake SATA DOM (Redpill)\"" >>"${TMP_PATH}/opts"
+   dialog --backtitle "$(backtitle)" --title "Switch SATA DOM" \
+@@ -3203,9 +3203,9 @@ function rebootMenu() {
+   rm -f "${TMP_PATH}/opts" >/dev/null
+   touch "${TMP_PATH}/opts"
+   # Only show descriptions in the menu
+-  echo -e "\"Arc: Config Mode\" \"\"" >>"${TMP_PATH}/opts"
+-  echo -e "\"Arc: Automated Update Mode\" \"\"" >>"${TMP_PATH}/opts"
+-  echo -e "\"Arc: Restart Network Service\" \"\"" >>"${TMP_PATH}/opts"
++  echo -e "\"DockDSM: Config Mode\" \"\"" >>"${TMP_PATH}/opts"
++  echo -e "\"DockDSM: Automated Update Mode\" \"\"" >>"${TMP_PATH}/opts"
++  echo -e "\"DockDSM: Restart Network Service\" \"\"" >>"${TMP_PATH}/opts"
+   if [ "${BUILDDONE}" = "true" ]; then
+     echo -e "\"DSM: Recovery Mode\" \"\"" >>"${TMP_PATH}/opts"
+     echo -e "\"DSM: Reinstall Mode\" \"\"" >>"${TMP_PATH}/opts"
+@@ -3222,9 +3222,9 @@ function rebootMenu() {
+ 
+   # Map the description back to the action
+   case "${resp}" in
+-    "Arc: Config Mode") REDEST="config" ;;
+-    "Arc: Automated Update Mode") REDEST="update" ;;
+-    "Arc: Restart Network Service") REDEST="network" ;;
++    "DockDSM: Config Mode") REDEST="config" ;;
++    "DockDSM: Automated Update Mode") REDEST="update" ;;
++    "DockDSM: Restart Network Service") REDEST="network" ;;
+     "DSM: Recovery Mode") REDEST="recovery" ;;
+     "DSM: Reinstall Mode") REDEST="junior" ;;
+     "System: UEFI") REDEST="uefi" ;;
+@@ -4062,7 +4062,7 @@ function notificationMenu() {
+       fi
+       dialog --backtitle "$(backtitle)" --title "Discord Notification Settings" \
+         --yes-label "Enable" --no-label "Disable" --extra-button --extra-label "Test" \
+-        --yesno "If you enable this, it will send you a notification to your Discord account after Arc or DSM is booted.\nDiscord ID: ${DISCORDUSER}\nYou can disable this at any time." 8 60 \
++        --yesno "If you enable this, it will send you a notification to your Discord account after DockDSM or DSM is booted.\nDiscord ID: ${DISCORDUSER}\nYou can disable this at any time." 8 60 \
+         2>"${TMP_PATH}/resp"
+       RET=$?
+       resp2="$(cat "${TMP_PATH}/resp" 2>/dev/null)"
+@@ -4099,7 +4099,7 @@ function remoteAssistance() {
+   exec 911>"${TMP_PATH}/remote.lock"
+   flock -n 911 || {
+     MSG="Another instance is already running."
+-    dialog --colors --aspect 50 --title "Arc Assistance" --msgbox "${MSG}" 0 0
++    dialog --colors --aspect 50 --title "Remote Assistance" --msgbox "${MSG}" 0 0
+     exit 1
+   }
+   trap 'flock -u 911; rm -f "${TMP_PATH}/remote.lock"; clear; echo "Reinitializing..."; exec "${ARC_PATH}/init.sh"' EXIT INT TERM HUP
+@@ -4108,7 +4108,7 @@ function remoteAssistance() {
+   {
+     printf "Press 'ctrl + c' to exit the assistance mode.\n"
+     printf "Please give the following link to the assistant. (Click to open and copy)\n\n"
+-    sshx -q --name "Arc Assistance" 2>&1 &
++    sshx -q --name "Remote Assistance" 2>&1 &
+     SSHX_PID=$!
+ 
+     # Wait for the sshx process to finish or handle Ctrl+C
+@@ -4117,7 +4117,7 @@ function remoteAssistance() {
+       echo "Failed to generate the remote assistance link."
+       while true; do sleep 1; done
+     fi
+-  } | dialog --backtitle "$(backtitle)" --colors --aspect 50 --title "Arc Assistance" \
++  } | dialog --backtitle "$(backtitle)" --colors --aspect 50 --title "Remote Assistance" \
+     --progressbox "Notice: Please keep this window open." 20 100 2>&1
+ 
+   clear
+@@ -4130,7 +4130,7 @@ function remoteAssistance() {
+ # Remote Assistance Boot Menu
+ function remoteAssistanceBootMenu() {
+   while true; do
+-    dialog --backtitle "$(backtitle)" --title "Arc Assistance" \
++    dialog --backtitle "$(backtitle)" --title "Remote Assistance" \
+       --yesno "Do you want to enable remote assistance at boot?" 5 60
+     case $? in
+       0)
+@@ -4248,7 +4248,7 @@ function recoverDSM() {
+       SN="$(readConfigKey "sn" "${BACKUP_CONFIG}")"
+       TEXT+="\nSerial: ${SN}"
+       ARC_PATCH="$(readConfigKey "arc.patch" "${BACKUP_CONFIG}")"
+-      TEXT+="\nArc Patch: ${ARC_PATCH}"
++      TEXT+="\nDockDSM Patch: ${ARC_PATCH}"
+       KERNEL="$(readConfigKey "kernel" "${BACKUP_CONFIG}")"
+       TEXT+="\nKernel: ${KERNEL}"
+       CONFDONE="$(readConfigKey "arc.confdone" "${BACKUP_CONFIG}")"
+@@ -4280,8 +4280,8 @@ function recoverDSM() {
+         mergeConfigModules "$(getAllModules "${PLATFORM}" "${KPRE:+${KPRE}-}${KVER}" | awk '{print $1}')" "${USER_CONFIG_FILE}"
+       fi
+     fi
+-    dialog --backtitle "$(backtitle)" --title "Restore Arc" \
+-      --aspect 18 --infobox "Restore successful! -> Reload Arc Init now" 3 50
++    dialog --backtitle "$(backtitle)" --title "Restore DockDSM" \
++      --aspect 18 --infobox "Restore successful! -> Reload DockDSM Init now" 3 50
+     sleep 3
+     umount -f "${TMP_PATH}/mdX" 2>/dev/null
+     rm -f "${HOME}/.initialized" && exec init.sh
+diff --git a/files/initrd/opt/arc/include/consts.sh b/files/initrd/opt/arc/include/consts.sh
+--- a/files/initrd/opt/arc/include/consts.sh
++++ b/files/initrd/opt/arc/include/consts.sh
+@@ -18,3 +18,3 @@
+ [ -f "${PART1_PATH}/ARC-BUILD" ] && ARC_BUILD="$(cat "${PART1_PATH}/ARC-BUILD")" || ARC_BUILD="null"
+-ARC_TITLE="Arc ${ARC_VERSION}"
++ARC_TITLE="DockDSM ${ARC_VERSION}"
+ 
+diff --git a/files/initrd/opt/arc/init.sh b/files/initrd/opt/arc/init.sh
+--- a/files/initrd/opt/arc/init.sh
++++ b/files/initrd/opt/arc/init.sh
+@@ -44,3 +44,3 @@
+ COLUMNS=${COLUMNS:-120}
+-BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
++BANNER="$(figlet -c -w "${COLUMNS}" "DockDSM Bootloader")"
+ TITLE="Version:"
+diff --git a/files/initrd/opt/arc/boot.sh b/files/initrd/opt/arc/boot.sh
+--- a/files/initrd/opt/arc/boot.sh
++++ b/files/initrd/opt/arc/boot.sh
+@@ -32,3 +32,3 @@
+ COLUMNS=${COLUMNS:-120}
+-BANNER="$(figlet -c -w "${COLUMNS}" "Arc Loader")"
++BANNER="$(figlet -c -w "${COLUMNS}" "DockDSM Bootloader")"
+ TITLE="Version:"
+diff --git a/files/initrd/opt/arc/arc.sh b/files/initrd/opt/arc/arc.sh
+--- a/files/initrd/opt/arc/arc.sh
++++ b/files/initrd/opt/arc/arc.sh
+@@ -67,3 +67,3 @@
+   else
+-    dialog --backtitle "$(backtitle)" --title "Arc Update" \
++    dialog --backtitle "$(backtitle)" --title "DockDSM Update" \
+       --infobox "Update is not possible in Offline Mode!" 5 40

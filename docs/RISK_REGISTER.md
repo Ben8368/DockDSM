@@ -41,9 +41,9 @@
 ### RISK-006（P1）：ARC 集成尚无运行与许可边界证据
 
 - **阻断 Gate：** ARC 生产支持、捆绑/分发或商业许可声明。
-- **问题：** 上游 x86 Docker/QEMU 示例不能替代本仓库的完整 DSM 启动、模型、存储、网络、健康检查、关机、升级/恢复证据；README 使用声明与 GPLv3 LICENSE 的适用边界仍需澄清。
+- **问题：** 上游 x86 Docker/QEMU 示例不能替代本仓库的完整 DSM 启动、模型、存储、网络、健康检查、关机、升级/恢复证据；固定镜像 workflow 仅取 `apex`/`bzImage-apex` 并暂存 x86 GRUB，ARM64 Buildroot/runtime/DSM model 路径尚未建立；README 使用声明与 GPLv3 LICENSE 的适用边界仍需澄清。
 - **当前策略：** 按 [ADR 0009](ADR/0009-owned-bootloader-source.md) 接管 DockDSM Bootloader；[源码审计](bootloader-source-audit.md)已识别浮动 Buildroot/releases、预编译 blob 和许可适用范围缺口。许可证/二进制来源/可构建源码闭包未关闭前，保留固定研究 submodule，不整体迁移或捆绑争议产物；不迁入授权/序列号绕过，保持 Virtual DSM/DS124。
-- **组件证据：** 逐项门禁与缺口以 [component-manifest.json](../research/bootloader/component-manifest.json) 为唯一状态表；[取证记录](archive/reviews/2026-10-23-bootloader-component-admission.md)区分 Buildroot 多端点不可访问、LKM/Custom 无实现源码、Modules 缺失 src/ 及动态 SDK/firmware、GRUB seed 缺对应源码。离线普通检查通过不解除严格准入或分发阻断；RISK-006 未关闭。
+- **组件证据：** 逐项门禁与缺口以 [component-manifest.json](../research/bootloader/component-manifest.json) 为唯一状态表；[取证记录](archive/reviews/2026-10-23-bootloader-component-admission.md)区分 Buildroot 多端点不可访问、LKM/Custom 无实现源码、Modules 缺失 src/ 及动态 SDK/firmware、GRUB seed 缺对应源码。ARM64 overlay 现状见[移植评估](../research/arc/arm64-port-assessment.md)；离线检查不解除准入或分发阻断。
 - **关闭证据：** 确认适用许可及 DSM 使用约束；独立 profile 通过全新盘安装、管理面、持久化、干净关机和升级恢复验收后，另行决定支持范围。
 
 ### RISK-007（P1）：Mac 容器后端的加速、持久化与性能选型未验证
@@ -73,6 +73,13 @@
 - **问题：** 原 `kexec_file_load`（`kexec -s`）路径即使传入 `--mem-min=0x42000000`，仍将 Buildroot/Linux 6.12.112 target kernel 放在 `0x41000000`，与 loader LPI property/pending tables (`0x41060000`/`0x41070000`) 重叠；target 重置 64 KiB property table 时覆盖自身文本并 Oops。改用 legacy `kexec_load`（`kexec -c`）后，下界生效，open Linux GICv3/A55/ITS-on 在 loader LPI 保持开启时从 `0x42000000` 开始加载并通过 handoff。官方 DS124 7.2.2-72806 在 loader LPI 开启时虽到达 login，但输出 `Booted with LPIs enabled, memory probably corrupted`，并进入内核 damage-control 路径、taint 后关闭 LPI；故 DS124 研究 provider 继续要求 loader-only `irqchip.gicv3_nolpi=1`。结合 `kexec_load --mem-min` 后，DS124 diskless handoff 所有段均位于 `0x42000000` 以上，loader 与 target 不再有该警告，DSM target 在 `0x40170000` 分配新 property table并到达 login。
 - **证据与边界：** 配置、命令和日志见[ARM64 loader 研究记录](../research/arm64/loader/README.md)。2026-10-25 官方 DS124 72806 内核使用通用 `linux,dummy-virt` DTB，在同一 patched QEMU TCG VM 经 kexec 到无盘 login；独立 scratch probe 发现 `rtk_ahci`、SATA link、`QEMU HARDDISK` 和 4,194,304 扇区。stock DSM initrd 在 snapshot-backed 2 GiB sparse scratch 上再次到达 login，预期 timeout 后 backing 仍为 mode 0600、单链接、0 allocated blocks。patched sysbus AHCI 对 `readonly=on` 在 guest 启动前报 `Block node is read-only`；通过配置让 guest 看见可写临时 COW overlay，验证只证明 backing 未改变，不证明 guest 设备为只读。上述证据不证明 DSM 用户数据盘、分区、卷、网络、安装、持久化、管理面或设备验收。研究参数不进入生产 profile。
 - **关闭证据：** 对选定 QEMU `virt`/补丁契约验证设备树、内存、CPU、串口、存储和网络；在独立测试盘完成 DSM 安装、持久化、干净关机与恢复，并证明 ITS 生命周期安全。TCG 登录提示不等于 DS124 硬件或 DSM 生命周期验收。
+
+### RISK-011（P2）：ARM64 UEFI/GRUB loader 尚无真实构建与启动证据
+
+- **阻断 Gate：** ARM64 UEFI/GRUB loader 支持声明；不阻断已验证的 ARM64 direct boot 或 DS124 kexec 研究结论。
+- **问题：** `research-arm64-grub-linux` 原型与合成契约检查已实现；Buildroot 2025.02.19 源树 provenance 校验通过，但 ARM64 Colima 构建停在 glibc 完整 Git 历史下载，未产出镜像；AArch64 UEFI QEMU 串口启动链也未验证。
+- **当前策略：** 保持 research-only；重试时用 VM 本地输出和下载缓存，在 Linux 上以验证过的 Buildroot 2025.02.19 及外部 AArch64 UEFI firmware 完成构建与 TCG 冷启动，不注册 `full-arm64`。
+- **关闭证据：** 记录 Buildroot 输入身份与镜像 SHA256、实际串口日志中的 GRUB/kexec/目标关机标记及 QEMU 退出码 0；DSM 安装与目标设备验收另行过门禁。[实验记录](../research/arm64/grub-loader/README.md)
 
 ## 已关闭风险
 

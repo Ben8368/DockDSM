@@ -1,18 +1,66 @@
 diff --git a/files/initrd/opt/arc/arc-functions.sh b/files/initrd/opt/arc/arc-functions.sh
-index 9cc33cf..19be9d5 100755
+index 9cc33cf..b232c52 100644
 --- a/files/initrd/opt/arc/arc-functions.sh
 +++ b/files/initrd/opt/arc/arc-functions.sh
-@@ -34,6 +34,9 @@ function arcModel() {
+@@ -17,6 +17,12 @@ function arcModel() {
+   dialog --backtitle "$(backtitle)" --title "Model" \
+     --infobox "Reading Models..." 3 25
+   RESTRICT=1
++  HOST_ARCH="$(uname -m)"
++  case "${HOST_ARCH}" in
++    x86_64|amd64) HOST_ARCH="x86_64" ;;
++    aarch64|arm64) HOST_ARCH="arm64" ;;
++    *) HOST_ARCH="unknown" ;;
++  esac
+   PS="$(readConfigEntriesArray "platforms" "${P_FILE}" | sort)"
+   echo -n "" >"${TMP_PATH}/modellist"
+   while read -r P; do
+@@ -34,6 +40,13 @@ function arcModel() {
          DT="$(readConfigKey "platforms.${A}.dt" "${P_FILE}")"
          KVER="$(readConfigEntriesArray "platforms.${A}.productvers" "${P_FILE}" | while read -r V; do K="$(readConfigKey "platforms.${A}.productvers.\"${V}\".kver" "${P_FILE}")"; [ -n "${K}" ] && echo "${K}" && break; done)"
          KVERM="$(echo "${KVER}" | awk -F'.' '{print $1".x"}')"
-+        # Arc currently supports x86-64 only; allow future configs to declare an architecture.
++        # Existing configs default to x86_64; new profiles declare their architecture.
 +        ARCH="$(readConfigKey "platforms.${A}.arch" "${P_FILE}")"
-+        [ -n "${ARCH}" ] || ARCH="x86_64"
++        case "${ARCH:-x86_64}" in
++          x86_64|amd64) ARCH="x86_64" ;;
++          aarch64|arm64) ARCH="arm64" ;;
++          *) ARCH="unknown" ;;
++        esac
          PLTCNT="$(readConfigKey "platforms.${A}.ccnt" "${P_FILE}")"
          FLAGS="$(readConfigArray "platforms.${A}.flags" "${P_FILE}")"
          BETA=""
-@@ -111,11 +114,11 @@ function arcModel() {
+@@ -61,9 +74,14 @@ function arcModel() {
+         if [ "${RESTRICT}" -eq 1 ]; then
+           [ -z "$(grep -w "${M}" "${S_FILE}")" ] && COMPATIBLE=0
+           [ -z "$(grep -w "${A}" "${P_FILE}")" ] && COMPATIBLE=0
++          [ "${HOST_ARCH}" != "unknown" ] && [ "${ARCH}" = "${HOST_ARCH}" ] || COMPATIBLE=0
+           if [ -n "${FLAGS}" ]; then
+             for F in ${FLAGS}; do
+-              grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
++              if [ "${ARCH}" = "arm64" ]; then
++                grep -E "^Features[[:space:]]*:" /proc/cpuinfo | grep -qw "${F}" || COMPATIBLE=0
++              else
++                grep -q "^flags.*${F}.*" /proc/cpuinfo || COMPATIBLE=0
++              fi
+             done
+           fi
+           if [ "${KVER:0:1}" = "5" ]; then
+@@ -104,18 +122,25 @@ function arcModel() {
+             echo -e "${WARN}- Hyper-V VM: You need to enable the custom kernel.\n" >>"${TMP_PATH}/${M}_warn"
+           fi
+         else
++          if [ "${HOST_ARCH}" = "unknown" ] || [ "${ARCH}" = "unknown" ] || [ "${ARCH}" != "${HOST_ARCH}" ]; then
++            echo -e "${WARN}- Profile architecture ${ARCH} does not match loader architecture ${HOST_ARCH}.\n" >>"${TMP_PATH}/${M}_warn"
++          fi
+           if [ -n "${FLAGS}" ]; then
+             for F in ${FLAGS}; do
+-              grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- ${F} support required.\n" >>"${TMP_PATH}/${M}_warn"
++              if [ "${ARCH}" = "arm64" ]; then
++                grep -E "^Features[[:space:]]*:" /proc/cpuinfo | grep -qw "${F}" || echo -e "${WARN}- ${F} support required.\n" >>"${TMP_PATH}/${M}_warn"
++              else
++                grep -q "^flags.*${F}.*" /proc/cpuinfo || echo -e "${WARN}- ${F} support required.\n" >>"${TMP_PATH}/${M}_warn"
++              fi
+             done
            fi
          fi
          [ -n "$(grep -w "${M}" "${S_FILE}")" ] && BETA="Loader" || BETA="Syno"
@@ -22,7 +70,27 @@ index 9cc33cf..19be9d5 100755
        [ ! -s "${TMP_PATH}/menu" ] && echo "No supported Models found." >"${TMP_PATH}/menu"
        [ "${RESTRICT}" -eq "1" ] && TITLEMSG="Supported Models/Platforms for your Hardware" || TITLEMSG="All Models/Platforms"
 -      MSG="${TITLEMSG} | Features: \Z4x = supported\Zn / \Z1+ = need Addon\Zn\n$(printf "\Zb%-16s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-3s\Zn \Zb%-4s\Zn \Zb%-8s\Zn \Zb%-4s\Zn \Zb%-4s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-7s\Zn" "Model" "Platform" "Kernel" "DT" "Arc" "Threads" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
-+      MSG="${TITLEMSG} | Architecture: x86_64 (ARM64 is not supported by Arc)\nFeatures: \Z4x = supported\Zn / \Z1+ = need Addon\Zn\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-3s\Zn \Zb%-4s\Zn \Zb%-8s\Zn \Zb%-4s\Zn \Zb%-4s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-7s\Zn" "Model" "Arch" "Platform" "Kernel" "DT" "Arc" "Threads" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
++      MSG="${TITLEMSG} | Host Architecture: ${HOST_ARCH}\nFeatures: \Z4x = supported\Zn / \Z1+ = need Addon\Zn\n$(printf "\Zb%-16s\Zn \Zb%-8s\Zn \Zb%-15s\Zn \Zb%-8s\Zn \Zb%-3s\Zn \Zb%-4s\Zn \Zb%-8s\Zn \Zb%-4s\Zn \Zb%-4s\Zn \Zb%-10s\Zn \Zb%-12s\Zn \Zb%-10s\Zn \Zb%-7s\Zn" "Model" "Arch" "Platform" "Kernel" "DT" "Boot" "Threads" "iGPU" "HBA" "M.2 Cache" "M.2 Volume" "USB Mount" "Source")"
        [ "${RESTRICT}" -eq "1" ] && SHOWMSG="Show all" || SHOWMSG="Show supported"
        dialog --backtitle "$(backtitle)" --title "DSM Model" --colors \
          --cancel-label "${SHOWMSG}" --help-button --help-label "Exit" \
+@@ -128,7 +153,7 @@ function arcModel() {
+           [ -z "${resp}" ] && return
+           if [ -s "${TMP_PATH}/${resp}_warn" ]; then
+             MSG="Your Hardware is not compatible with the selected Model!\n\n\Z1$(cat "${TMP_PATH}/${resp}_warn")\Zn\n\nDo you still want to proceed?"
+-            dialog --backtitle "$(backtitle)" --title "Arc Warning" --colors \
++            dialog --backtitle "$(backtitle)" --title "DockDSM Warning" --colors \
+               --yesno "${MSG}" 0 0
+             RET=$?
+             if [ $RET -eq 0 ]; then
+@@ -479,8 +504,8 @@ function arcSettings() {
+   fi
+ 
+   if [ "${ARC_MODE}" = "config" ]; then
+-    [ "${AESSYS}" = "false" ] && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: Your System doesn't support Hardware encryption in DSM. (AES)" 5 70
+-    [ "${CPUFREQ}" = "false" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling" && dialog --backtitle "$(backtitle)" --title "Arc Warning" --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
++    [ "${AESSYS}" = "false" ] && dialog --backtitle "$(backtitle)" --title "DockDSM Warning" --msgbox "WARN: Your System doesn't support Hardware encryption in DSM. (AES)" 5 70
++    [ "${CPUFREQ}" = "false" ] && readConfigMap "addons" "${USER_CONFIG_FILE}" | grep -q "cpufreqscaling" && dialog --backtitle "$(backtitle)" --title "DockDSM Warning" --msgbox "WARN: It is possible that CPU Frequency Scaling is not working properly with your System." 6 80
+   fi
+ 
+   EMMCBOOT="$(readConfigKey "emmcboot" "${USER_CONFIG_FILE}")"

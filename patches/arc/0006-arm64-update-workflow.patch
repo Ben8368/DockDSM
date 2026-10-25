@@ -1,0 +1,12 @@
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -165,7 +165,7 @@
+           GRUB_UPDATE="files/p3/grub-update"
+           rm -rf "${GRUB_UPDATE}"
+           mkdir -p "${GRUB_UPDATE}/boot/grub" "${GRUB_UPDATE}/EFI/BOOT"
+-          for T in i386-pc i386-efi x86_64-efi; do
++          for T in i386-pc i386-efi x86_64-efi arm64-efi; do
+             [ -d "/tmp/p1/boot/grub/${T}" ] && cp -r "/tmp/p1/boot/grub/${T}" "${GRUB_UPDATE}/boot/grub/"
+           done
+           find "/tmp/p1/EFI/BOOT" -maxdepth 1 -iname 'boot*.efi' -exec cp {} "${GRUB_UPDATE}/EFI/BOOT/" \;

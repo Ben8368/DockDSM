@@ -27,7 +27,7 @@ Docker 负责运行 QEMU 进程，并不直接提供虚拟化。ARC 在同一台
 ### 源码融合状态
 
 - 已固定上游快照 `99195dbdf4e0a21c5304ddb06e07dc57419679bc`（ARC 4.1.2），不跟随浮动分支自动更新。
-- DockDSM overlay 在 ARC 型号列表添加架构列：读取平台配置 `arch`，缺省为 `x86_64`，并说明 ARC 当前不支持 ARM64。
+- DockDSM overlay 在型号列表显示规范化架构，并在受限列表中按 host arch 过滤；既有配置缺省 `x86_64`，CPU 特性读取兼容 ARM64 的 `Features` 字段。`arm64-efi` GRUB 交叉编译、EFI 分区标记、内嵌 GRUB 镜像工作流和更新包中的 ARM64 EFI GRUB 模块已加入；运行时标题、启动横幅和一般操作界面使用 DockDSM 品牌，ARC 来源/许可标注、内部配置键与上游 API 标识仍保留。固定配置表仍只有 x86 型号，尚无 ARM DSM profile、ARM runtime kernel/rootfs 或实际 ARC ARM 启动证据。
 - 上游 README 的禁止商业使用声明、仓库 GPL-3.0 `LICENSE` 与个别文件 MIT 头部尚未厘清。当前用 submodule 保持源码来源边界，不把源码/构建产物捆绑至 DockDSM 镜像或发布物。
 - 这是源码入口与 UI overlay 的隔离研究接入，不等同于 `full-x86_64` profile、DSM 安装/启动或生产支持已经实现。
 
@@ -54,6 +54,10 @@ PoC 交付包需包含固定 commit/release、loader 校验、所有动态下载
 ### Phase 4：ARM64 Bootloader 可行性研究（W61）
 
 x86 工作链验收后，先做移植可行性矩阵，不把 x86 Buildroot/内核/继承应用假定为可跨架构复用：
+
+本轮目标是将固定 ARC 4.1.2 的引导能力逐步移植为 DockDSM Bootloader，并保留源码来源与许可记录。集成边界由固定 `vendor/arc` submodule 与 `patches/arc/` overlay 组成；当前 checkout 中 submodule 工作树尚未初始化，overlay 也尚未进入生产镜像构建。ARM64 移植状态与缺口见[评估](../research/arc/arm64-port-assessment.md)。
+
+ARM64 UEFI → GRUB → Buildroot loader → kexec 的开放 Linux 实验仅验证底层启动部件，不运行 ARC 用户空间或 DSM；它不是 ARC ARM64 移植完成的证据。[实验说明](../research/arm64/grub-loader/README.md)
 
 - ARM64 loader kernel、initrd/Buildroot 用户空间与启动介质格式是否可构建及维护；
 - QEMU `aarch64` machine、固件/UEFI 或直接启动方式，与 ARC 预期 boot flow 的接口；
