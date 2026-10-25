@@ -237,8 +237,59 @@ class WiringTests(unittest.TestCase):
         job = workflow('test.yml')['jobs']['tests']
         steps = [step.get('run', '') for step in job['steps']]
         self.assertTrue(any('python3 tests/bootloader-component-admission.py' in step for step in steps))
+        self.assertTrue(any('python3 tests/boot-provider-contract.py' in step for step in steps))
+        self.assertTrue(any('python3 tests/boot-provider-legacy.py' in step for step in steps))
+        self.assertTrue(any('python3 tests/production-x86-command.py' in step for step in steps))
+        self.assertTrue(any('python3 tests/buildroot-source-lock.py' in step for step in steps))
+        self.assertTrue(any('python3 tests/arm64-dsm-kexec.py' in step for step in steps))
+        self.assertTrue(any('python3 tests/arm64-dsm-sata-probe.py' in step for step in steps))
         self.assertFalse(any('check-bootloader-admission.py --strict' in step for step in steps))
         self.assertEqual({item['arch'] for item in job['strategy']['matrix']['include']}, {'amd64', 'arm64'})
+
+    def test_open_arm64_loader_handoff_is_a_required_native_job(self):
+        ci = workflow('test.yml')
+        job = ci['jobs']['arm64-loader']
+        steps = [step.get('run', '') for step in job['steps']]
+        workflow_text = '\n'.join(steps)
+        self.assertEqual(job['runs-on'], 'ubuntu-24.04-arm')
+        self.assertGreaterEqual(int(job['timeout-minutes']), 60)
+        self.assertTrue(all(package in workflow_text for package in
+                            ('bash', 'coreutils', 'curl', 'diffutils', 'findutils',
+                             'gawk', 'gzip', 'patch', 'perl', 'python3', 'sed', 'tar', 'which')))
+        self.assertIn('build-essential', workflow_text)
+        self.assertIn('qemu-system-arm', workflow_text)
+        self.assertIn('libelf-dev', workflow_text)
+        self.assertIn('libssl-dev', workflow_text)
+        self.assertTrue(any('fetch-buildroot.sh' in step for step in steps))
+        self.assertTrue(any('loader/build.sh' in step for step in steps))
+        self.assertTrue(any('loader/test.sh' in step for step in steps))
+        self.assertIn(' dependencies', (ROOT / 'research/arm64/loader/build.sh').read_text())
+        self.assertIn('arm64-loader', gate.REQUIRED)
+        self.assertIn('arm64-loader', ci['jobs']['result']['needs'])
+        self.assertFalse(any('PAT' in step or 'DSM' in step for step in steps))
+
+    def test_open_x86_64_grub_boot_is_a_required_native_job(self):
+        ci = workflow('test.yml')
+        job = ci['jobs']['x86_64-loader']
+        steps = [step.get('run', '') for step in job['steps']]
+        workflow_text = '\n'.join(steps)
+        self.assertEqual(job['runs-on'], 'ubuntu-24.04')
+        self.assertGreaterEqual(int(job['timeout-minutes']), 60)
+        self.assertTrue(all(package in workflow_text for package in
+                            ('bash', 'coreutils', 'curl', 'diffutils', 'findutils',
+                             'gawk', 'gzip', 'patch', 'perl', 'python3', 'sed', 'tar', 'which')))
+        self.assertIn('build-essential', workflow_text)
+        self.assertIn('qemu-system-x86', workflow_text)
+        self.assertIn('xorriso', workflow_text)
+        self.assertIn('libelf-dev', workflow_text)
+        self.assertIn('libssl-dev', workflow_text)
+        self.assertTrue(any('fetch-buildroot.sh' in step for step in steps))
+        self.assertTrue(any('grub-loader/build.sh' in step for step in steps))
+        self.assertTrue(any('grub-loader/test.sh' in step for step in steps))
+        self.assertIn(' dependencies', (ROOT / 'research/x86_64/grub-loader/build.sh').read_text())
+        self.assertIn('x86_64-loader', gate.REQUIRED)
+        self.assertIn('x86_64-loader', ci['jobs']['result']['needs'])
+        self.assertFalse(any('PAT' in step or 'DSM' in step for step in steps))
 
     def test_native_architectures_and_bot_policy(self):
         ci = workflow('test.yml')

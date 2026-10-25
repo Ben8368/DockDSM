@@ -113,6 +113,21 @@ jobs:
           python -m pip install --require-hashes -r requirements.txt
       - name: Offline bootloader component admission regression
         run: python3 tests/bootloader-component-admission.py
+      - name: Versioned Boot Provider and legacy mapping contracts
+        run: |
+          python3 tests/boot-provider-contract.py
+          python3 tests/boot-provider-legacy.py
+          python3 tests/production-x86-command.py
+      - name: Shared Buildroot and kernel source lock
+        run: python3 tests/buildroot-source-lock.py
+      - name: ARM64 kexec handoff archive and evidence tests
+        run: python3 tests/arm64-loader.py
+      - name: ARM64 diskless DS124 kexec harness contract
+        run: python3 tests/arm64-dsm-kexec.py
+      - name: ARM64 DS124 isolated SATA probe contract
+        run: python3 tests/arm64-dsm-sata-probe.py
+      - name: x86_64 GRUB provider contract
+        run: python3 tests/x86_64-grub-loader.py
       - name: Platform, acquisition and guest checks
         run: |
           bash tests/pat-acquisition.sh
@@ -158,16 +173,82 @@ jobs:
       - name: Research ARM smoke
         run: bash research/arm64/tests/smoke.sh
 
+  arm64-loader:
+    name: Open ARM64 Loader to Linux kernel handoff
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install Buildroot and QEMU host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bash bc bison build-essential coreutils cpio curl diffutils file findutils flex gawk gettext git gzip \
+            libelf-dev libncurses-dev libssl-dev patch perl python3 qemu-system-arm rsync sed tar unzip wget which xz-utils
+      - name: Fetch fixed Buildroot source
+        run: research/arm64/loader/fetch-buildroot.sh "${{ runner.temp }}/buildroot-2025.02.19"
+      - name: Build independent ARM64 Linux loader
+        env:
+          BUILDROOT_DIR: ${{ runner.temp }}/buildroot-2025.02.19
+          OUTPUT_DIR: ${{ runner.temp }}/dockdsm-arm64-kexec
+          JOBS: '4'
+        run: research/arm64/loader/build.sh
+      - name: Verify real QEMU Loader to Linux kexec handoff
+        run: research/arm64/loader/test.sh "${{ runner.temp }}/dockdsm-arm64-kexec"
+      - name: Verify GICv3 kexec handoff with ITS disabled
+        run: >-
+          research/arm64/loader/test.sh "${{ runner.temp }}/dockdsm-arm64-kexec"
+          --cpu cortex-a55 --gic-version 3 --its off
+      - name: Verify GICv3 ITS handoff with loader LPIs enabled and memory floor
+        run: >-
+          research/arm64/loader/test.sh "${{ runner.temp }}/dockdsm-arm64-kexec"
+          --cpu cortex-a55 --gic-version 3 --its on
+      - name: Verify target-owned GICv3 ITS initialization after kexec
+        run: >-
+          research/arm64/loader/test.sh "${{ runner.temp }}/dockdsm-arm64-kexec"
+          --cpu cortex-a55 --gic-version 3 --memory-mib 1024 --its on --loader-disable-lpi
+
+  x86_64-loader:
+    name: Open x86_64 GRUB BIOS and UEFI ISO to Linux boot
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install Buildroot and QEMU host tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bash bc bison build-essential coreutils cpio curl diffutils file findutils flex gawk gettext git gzip \
+            libelf-dev libncurses-dev libssl-dev ovmf patch perl python3 qemu-system-x86 rsync sed tar unzip wget which xorriso xz-utils
+      - name: Fetch fixed Buildroot source
+        run: research/arm64/loader/fetch-buildroot.sh "${{ runner.temp }}/buildroot-2025.02.19"
+      - name: Build independent x86_64 GRUB ISO
+        env:
+          BUILDROOT_DIR: ${{ runner.temp }}/buildroot-2025.02.19
+          OUTPUT_DIR: ${{ runner.temp }}/dockdsm-x86_64-grub
+          JOBS: '4'
+        run: research/x86_64/grub-loader/build.sh
+      - name: Verify real GRUB BIOS and UEFI to Linux QEMU boot
+        run: |
+          research/x86_64/grub-loader/test.sh "${{ runner.temp }}/dockdsm-x86_64-grub" \
+            --uefi /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_VARS_4M.fd
+
   images:
     name: Production image build
-    needs: [plan, docs, lint, tests, qemu-patches, research-smoke]
+    needs: [plan, docs, lint, tests, qemu-patches, research-smoke, arm64-loader, x86_64-loader]
     if: needs.plan.outputs.images == 'true'
     uses: ./.github/workflows/arm-qemu-build.yml
 
   result:
     name: CI result
     if: always()
-    needs: [plan, docs, lint, tests, qemu-patches, research-smoke, images]
+    needs: [plan, docs, lint, tests, qemu-patches, research-smoke, arm64-loader, x86_64-loader, images]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

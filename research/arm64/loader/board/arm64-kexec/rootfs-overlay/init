@@ -1,0 +1,28 @@
+#!/bin/sh
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+echo DOCKDSM_KEXEC_LOADER_READY
+
+test -s /boot/Image || { echo DOCKDSM_KEXEC_LOADER_ERROR_NO_IMAGE; exec sh; }
+test -s /boot/dockdsm-target.cpio.gz || {
+  echo DOCKDSM_KEXEC_LOADER_ERROR_NO_TARGET_INITRD
+  exec sh
+}
+
+if ! kexec -c -d -l /boot/Image --mem-min=0x42000000 \
+  --initrd=/boot/dockdsm-target.cpio.gz \
+  --command-line='console=ttyAMA0,115200 earlycon=pl011,0x09000000 rdinit=/init loglevel=7 nokaslr reset_devices nr_cpus=1'; then
+  echo DOCKDSM_KEXEC_LOADER_ERROR_LOAD_FAILED
+  exec sh
+fi
+echo DOCKDSM_KEXEC_IMAGE_LOADED
+if ! kexec -e; then
+  echo DOCKDSM_KEXEC_LOADER_ERROR_EXEC_FAILED
+  exec sh
+fi
+echo DOCKDSM_KEXEC_EXEC_RETURNED
+exec sh

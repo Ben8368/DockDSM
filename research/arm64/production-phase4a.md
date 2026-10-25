@@ -214,7 +214,7 @@ CPU 记录必须包含 implementer、part、revision、虚拟化扩展、主机�
    保持 USB CDC ECM + user hostfwd 与既有存储。容器显式映射 /dev/kvm，设置自身端口，不替换现有访客。
    现有 compose.local.yml 的 KVM=N 不可直接当 KVM 验收配置。
 4. 保存正常启动日志与 /proc/<qemu-pid>/cmdline 的 NUL 分隔原始 argv，确认
-   HOST_ARCH=arm64、GUEST_ARCH=arm64、QEMU_BIN=qemu-system-aarch64，
+   CONTAINER_ARCH=arm64、GUEST_ARCH=arm64、QEMU_BIN=qemu-system-aarch64；另外从 Docker 宿主独立采集 host arch，不能以容器 `uname` 代替，
    最终 -accel kvm、-cpu host，没有任何 TCG 选项；QMP query-kvm 同时要求 present=true、enabled=true。
    验收流程发现生产回退必须拒收该次 KVM 运行，不能把正常 TCG 就绪计入 KVM。
 5. 0004 保留在生产构建中。保存四补丁应用/构建证明和二进制身份；源码改动仅在 accel/tcg 和 target/arm/tcg。

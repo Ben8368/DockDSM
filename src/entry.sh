@@ -45,16 +45,25 @@ platformBuildCommand
 cmd=("$QEMU_BIN")
 version=$("${cmd[@]}" --version | awk 'NR==1 { print $4 }')
 info "Booting $APP using QEMU v$version..." && echo
+runtime_cmd=(python3 /run/platform/legacy_provider.py --exec-plan)
+arm_kvm_preprobed=false
+if [[ "$DSM_PLATFORM" == rtd1619b && "${KVM:-N}" == Y && "${ARM_ACCEL:-}" == kvm ]]; then
+  arm_kvm_preprobed=true
+fi
+DOCKDSM_ARM_KVM_PROBED="$arm_kvm_preprobed"
+: "${STORAGE:=/storage}"
+export DSM_PLATFORM GUEST_ARCH PLATFORM QEMU_BIN MACHINE BOOT_MODE CONTAINER_ARCH STORAGE
+export DOCKDSM_ARM_KVM_PROBED
 
 if ! enabled "$SHUTDOWN"; then
-  exec "${cmd[@]}" "${QEMU_ARGS[@]}"
+  DOCKDSM_ARM_KVM_PROBED="$arm_kvm_preprobed" exec "${runtime_cmd[@]}" "${QEMU_ARGS[@]}"
 fi
 
 if ! platformInteractiveConsole; then
-  "${cmd[@]}" "${QEMU_ARGS[@]}" &
+  DOCKDSM_ARM_KVM_PROBED="$arm_kvm_preprobed" "${runtime_cmd[@]}" "${QEMU_ARGS[@]}" &
 else
   startConsole
-  startQemu "${cmd[@]}" "${QEMU_ARGS[@]}"
+  DOCKDSM_ARM_KVM_PROBED="$arm_kvm_preprobed" startQemu "${runtime_cmd[@]}" "${QEMU_ARGS[@]}"
 fi
 
 pid=$!

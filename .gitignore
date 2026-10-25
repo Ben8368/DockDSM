@@ -118,6 +118,8 @@ downloads/
 
 # ARM DSM research artifacts may contain proprietary PAT contents.
 /research/arm64/work/
+# Local x86_64 emulator evidence and build logs.
+/research/x86_64/work/
 
 ##############################
 # Disk Images

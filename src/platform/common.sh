@@ -13,12 +13,17 @@ platformInit() {
   # This path comes exclusively from the whitelist above.
   # shellcheck source=/dev/null
   . "$directory/$DSM_PLATFORM.sh"
-  HOST_ARCH=$(uname -m)
-  case "$HOST_ARCH" in
-    x86_64) HOST_ARCH=amd64 ;;
-    aarch64) HOST_ARCH=arm64 ;;
+  # uname runs inside the container; it cannot identify the Docker host's CPU.
+  CONTAINER_ARCH=$(uname -m)
+  case "$CONTAINER_ARCH" in
+    x86_64) CONTAINER_ARCH=amd64 ;;
+    aarch64) CONTAINER_ARCH=arm64 ;;
   esac
   platformDefaults
+  DSM_PLATFORM="$DSM_PLATFORM" GUEST_ARCH="$GUEST_ARCH" \
+    PLATFORM="$PLATFORM" QEMU_BIN="$QEMU_BIN" \
+    MACHINE="$MACHINE" BOOT_MODE="$BOOT_MODE" \
+    python3 "$directory/legacy_provider.py" --check-env
 }
 
 platformValidateBinary() {

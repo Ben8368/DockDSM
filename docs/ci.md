@@ -8,7 +8,7 @@ CI 验证仓库当前已有实现，不下载 DSM PAT、不启动真实 DSM、�
 
 | 层级 | 触发 | 检查 |
 | --- | --- | --- |
-| 常规 CI | 推送到 master、面向仓库的 PR、手动运行 | Plan、Docs、Lint、双架构合成、QEMU 补丁、research smoke、统一结果门禁 |
+| 常规 CI | 推送到 master、面向仓库的 PR、手动运行 | Plan、Docs、Lint、双架构合成、QEMU 补丁、research smoke、原生 x86_64 GRUB BIOS/UEFI 启动、原生 ARM64 Linux kexec handoff、统一结果门禁 |
 | 原生镜像 | 由 CI 保守路由，或 Native image checks 手动运行 | amd64 / arm64 原生构建、ELF/库/依赖、构建失败诊断、x86 命令、DC ZVA 回归 |
 | 发布 | Publish image 手动输入版本 | 强制完整 CI，通过后才构建/推送 GHCR digest，并创建和检查双架构 manifest |
 
@@ -28,7 +28,7 @@ CI 验证仓库当前已有实现，不下载 DSM PAT、不启动真实 DSM、�
 
 `CI result` 使用 `always()`，依赖 Plan 与全部检查，通过 [scripts/ci-result.py](../scripts/ci-result.py)汇总：
 
-- Plan、Docs、Lint、双架构合成、补丁与 smoke 必须 success。
+- Plan、Docs、Lint、双架构合成、补丁、smoke、原生 x86_64 GRUB 启动与 ARM64 Linux handoff 必须 success。
 - 计划要求镜像时必须 success；只有明确的 images=false 才接受镜像 skipped。
 - 失败、取消、缺失输出、非预期 skipped 或依赖集合漂移均返回非零。
 - master 的 required check 使用稳定的 `CI result` 并绑定 GitHub Actions；不可只要求某个可能跳过的子 job。PR、最新基线、讨论解决与管理员约束遵循 [ADR 0007](ADR/0007-bot-collaboration.md)。
@@ -44,9 +44,11 @@ PR 推送后 CI 在后台运行，创建者无需保持会话等待；合并前�
 
 - **Docs governance**：文档预算/链接、品牌与来源、署名 hook、全树编码/空白、CI 策略、派单边界与 Jules setup 离线回归。
 - **Lint**：Bash syntax、ShellCheck、Hadolint、JSON/YAML 重复键、校验下载的 Actionlint、整个根提交 whitespace。
-- **Synthetic regression tests**：原生 amd64、arm64 runner 上的 PAT 获取策略、包诊断、Surveillance 安装门禁、clock、image/installer/runtime 等；包含 `tests/bootloader-component-admission.py` 离线准入与 tree 身份/故障注入检查；不获取上游组件，不运行真实 `--strict` 来使阻断清单拖垮开发 CI。夹具不下载 DSM，installer 在可丢弃 runner 上使用 sudo 恢复属主与特殊文件。
+- **Synthetic regression tests**：原生 amd64、arm64 runner 上的 Boot Provider/legacy 契约、x86 GRUB 与 ARM64 loader 单测、PAT 获取策略、包诊断、Surveillance 安装门禁、clock、image/installer/runtime 等；包含离线准入与 tree 身份/故障注入检查；不获取上游组件，不运行真实 `--strict` 来使阻断清单拖垮开发 CI。夹具不下载 DSM，installer 在可丢弃 runner 上使用 sudo 恢复属主与特殊文件。
 - **QEMU patch apply**：固定 QEMU v8.2.2，检查主来源及 GitHub mirror 回退、源码身份和补丁干净应用。
 - **Research smoke**：研究脚本参数、平台和错误路径，不作为真实访客验收。
+- **Open ARM64 loader handoff**：原生 ARM64 runner 从固定 Buildroot LTS 构建 Linux initramfs loader，在同一 QEMU VM 内通过 `kexec` 交接到开源 ARM64 Linux kernel，并检查串口 marker 顺序；不使用 DSM PAT，不作为 DSM/Bootloader 产品验收。
+- **Open x86_64 GRUB boot**：原生 amd64 runner 从固定 Buildroot LTS 构建 BIOS/UEFI 双启动 GRUB ISO，在 SeaBIOS 与 OVMF TCG 下分别启动开源 x86_64 Linux 并检查串口 marker；不使用 DSM PAT，不作为 DSM/Bootloader 产品验收。
 - **Production image build**：固定平台的原生 Docker 构建；架构/库/import、构建诊断、fake-QEMU x86 argv 和真实 patched-QEMU DC ZVA 合成验证。成功不代表 DSM 启动、KVM 或摄像头验收。
 
 CI 策略由 [tests/ci-policy.py](../tests/ci-policy.py)回归，覆盖根提交、docs-only、混合/多提交变更、代码改名、缺失基线、发布强制与失败/取消/跳过门禁。

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
+mount -t proc proc /proc 2>/dev/null || true
+mount -t sysfs sysfs /sys 2>/dev/null || true
+echo DOCKDSM_X86_GRUB_LINUX_BOOTED
+sync
+poweroff -f

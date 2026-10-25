@@ -69,7 +69,7 @@ platformKvmDeviceAccessible() { [[ -r /dev/kvm && -w /dev/kvm ]]; }
 platformConfigureCpu() {
   ARM_ACCEL='tcg,thread=multi'
   CPU_FLAGS='max,lpa2=off'
-  if [[ "$HOST_ARCH" == arm64 ]] && ! disabled "$ARM_KVM_REQUEST"; then
+  if [[ "$CONTAINER_ARCH" == arm64 ]] && ! disabled "$ARM_KVM_REQUEST"; then
     local fallback_reason=''
     if ! platformKvmNodeExists; then
       fallback_reason='/dev/kvm is missing'

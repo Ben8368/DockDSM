@@ -1,0 +1,31 @@
+#!/bin/sh
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+echo DOCKDSM_DSM_KEXEC_LOADER_READY
+
+test -s /boot/DSM_DS124_72806.Image || {
+  echo DOCKDSM_DSM_KEXEC_ERROR_NO_IMAGE
+  exec sh
+}
+test -s /boot/DSM_DS124_72806.initrd.cpio || {
+  echo DOCKDSM_DSM_KEXEC_ERROR_NO_INITRD
+  exec sh
+}
+
+if ! kexec -c -d -l /boot/DSM_DS124_72806.Image --mem-min=0x42000000 \
+  --initrd=/boot/DSM_DS124_72806.initrd.cpio \
+  --command-line='earlycon=uart8250,mmio32,0x0b000000 console=ttyS0,115200 initcall_debug keep_bootcon ignore_loglevel loglevel=8 printk.time=1 nokaslr reset_devices nr_cpus=2 libata.force=noncq'; then
+  echo DOCKDSM_DSM_KEXEC_ERROR_LOAD_FAILED
+  exec sh
+fi
+echo DOCKDSM_DSM_KEXEC_IMAGE_LOADED
+if ! kexec -e; then
+  echo DOCKDSM_DSM_KEXEC_ERROR_EXEC_FAILED
+  exec sh
+fi
+echo DOCKDSM_DSM_KEXEC_ERROR_EXEC_RETURNED
+exec sh
