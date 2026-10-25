@@ -2,7 +2,7 @@
 
 `Profile`、`HostCapabilities`、`VMConfig`、`BootProvider` 与 `LaunchPlan` 的内部版本化契约已实现于 [boot_provider.py](../src/platform/boot_provider.py) 和 [schema](../src/platform/boot-provider.schema.json)；固定 profile resolver 见 [profile_registry.py](../src/platform/profile_registry.py)，legacy 事实绑定见 [legacy_provider.py](../src/platform/legacy_provider.py)。DSM resolver 只列出现有 `virtualdsm` 和 `rtd1619b`；研究 Profile 需要通过独立 research resolver 获取。容器内无法可靠得知外层宿主 CPU，`host_arch` 因此允许为 `null`；这不代表使用容器架构推断宿主。KVM 计划仍要求设备可访问、QEMU 探测成功、容器与 guest 架构匹配；若宿主架构已知，也必须匹配 guest。生产 `entry.sh` 现将旧平台最终 argv 交给 legacy Provider 构造 LaunchPlan，再由 `qemu-process` adapter 以原始 argv 执行；`execvpe` 保持 PID、信号和退出码。x86 KVM 在启动前探测，ARM 复用平台已有探测。公开配置语法和 QEMU 参数顺序未改变。其余控制层和运行时仍为设计。范围与顺序见 [ADR 0009](ADR/0009-owned-bootloader-source.md)和[实施计划](implementation-plan.md)，现有公开接口仍以 [platforms](platforms.md) 为准。
 
-另有内部研究 Provider：`x86_64-grub-iso` 为开放 Linux GRUB ISO 规划 QEMU TCG argv，`arm64-linux-kexec` 为开放 ARM64 Linux handoff 规划 argv。两者通过 `qemu-process` adapter 使用 `execvpe` 启动单个 QEMU 进程；它们仅供隔离研究目录使用，不是 DSM Profile，不接入生产注册表。旧 DSM 平台仍走原有 `entry.sh` 路径；各自构建与启动证据见 [x86 GRUB 实验](../research/x86_64/grub-loader/README.md)和 [ARM64 kexec 实验](../research/arm64/loader/README.md)。
+另有内部研究 Provider：`x86_64-grub-iso` 为开放 Linux GRUB ISO 规划 QEMU TCG argv，`arm64-grub-efi` 为 ARM64 UEFI/GRUB 入口规划 argv，`arm64-linux-kexec` 为开放 ARM64 Linux handoff 规划 argv。它们通过 `qemu-process` adapter 使用 `execvpe` 启动单个 QEMU 进程；仅供隔离研究目录使用，不是 DSM Profile，不接入生产注册表。旧 DSM 平台仍走原有 `entry.sh` 路径；各自构建与启动证据见 [x86 GRUB 实验](../research/x86_64/grub-loader/README.md)、[ARM64 GRUB 实验](../research/arm64/grub-loader/README.md)和 [ARM64 kexec 实验](../research/arm64/loader/README.md)。
 
 ## 分层与数据流
 

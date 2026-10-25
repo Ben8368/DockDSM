@@ -3,8 +3,15 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ARC_DIR="${1:-${ROOT}/vendor/arc}"
-PATCH="${ROOT}/patches/arc/0001-show-model-architecture.patch"
+shopt -s nullglob
+PATCHES=("${ROOT}"/patches/arc/*.patch)
+shopt -u nullglob
 EXPECTED_REV="99195dbdf4e0a21c5304ddb06e07dc57419679bc"
+
+if [[ ${#PATCHES[@]} -eq 0 ]]; then
+  printf 'No ARC overlay patches found in %s\n' "${ROOT}/patches/arc" >&2
+  exit 1
+fi
 
 if [[ ! -e "${ARC_DIR}/.git" ]]; then
   printf 'ARC submodule is missing at %s\n' "${ARC_DIR}" >&2
@@ -35,12 +42,23 @@ if [[ "${ACTUAL_REV}" != "${EXPECTED_REV}" ]]; then
   exit 1
 fi
 
-if arc_git apply --reverse --check "${PATCH}" 2>/dev/null; then
-  printf 'DockDSM ARC patch is already applied in %s\n' "${ARC_DIR}"
-elif arc_git apply --check "${PATCH}" 2>/dev/null; then
-  arc_git apply "${PATCH}"
-  printf 'Applied DockDSM ARC patch to %s\n' "${ARC_DIR}"
-else
-  printf 'ARC patch does not apply cleanly to %s\n' "${ACTUAL_REV}" >&2
-  exit 1
+PENDING_PATCHES=()
+for PATCH in "${PATCHES[@]}"; do
+  PATCH_NAME="$(basename "${PATCH}")"
+  if arc_git apply --reverse --check "${PATCH}" 2>/dev/null; then
+    printf 'DockDSM ARC patch %s is already applied in %s\n' "${PATCH_NAME}" "${ARC_DIR}"
+  elif arc_git apply --check "${PATCH}" 2>/dev/null; then
+    PENDING_PATCHES+=("${PATCH}")
+  else
+    printf 'ARC patch %s does not apply cleanly to %s\n' "${PATCH_NAME}" "${ACTUAL_REV}" >&2
+    exit 1
+  fi
+done
+
+if [[ ${#PENDING_PATCHES[@]} -gt 0 ]]; then
+  for PATCH in "${PENDING_PATCHES[@]}"; do
+    PATCH_NAME="$(basename "${PATCH}")"
+    arc_git apply "${PATCH}"
+    printf 'Applied DockDSM ARC patch %s to %s\n' "${PATCH_NAME}" "${ARC_DIR}"
+  done
 fi

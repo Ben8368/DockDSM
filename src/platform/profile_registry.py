@@ -13,6 +13,9 @@ _LEGACY_PROFILES = MappingProxyType({
         "rtd1619b", "rtd1619b", "arm64", "rtd1619b-direct", "virt"),
 })
 _RESEARCH_PROFILES = MappingProxyType({
+    "research-arm64-grub-linux": Profile(
+        "research-arm64-grub-linux", "open-linux", "arm64",
+        "arm64-grub-efi", "virt", "arm64"),
     "research-arm64-linux-kexec": Profile(
         "research-arm64-linux-kexec", "open-linux", "arm64",
         "arm64-linux-kexec", "virt", "arm64"),

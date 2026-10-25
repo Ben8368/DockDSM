@@ -67,8 +67,10 @@ def check_launch_plan(argv):
 
 assert legacy_profile_ids() == ("virtualdsm", "rtd1619b")
 assert legacy_profile("virtualdsm").boot_provider == "virtualdsm-legacy"
+assert research_profile("research-arm64-grub-linux").dsm_platform == "open-linux"
 assert research_profile("research-arm64-linux-kexec").dsm_platform == "open-linux"
 assert research_profile("research-x86_64-grub-linux").dsm_platform == "open-linux"
+rejects(lambda: legacy_profile("research-arm64-grub-linux"))
 rejects(lambda: legacy_profile("research-arm64-linux-kexec"))
 rejects(lambda: legacy_profile("full-arm64"))
 rejects(lambda: research_profile("rtd1619b"))

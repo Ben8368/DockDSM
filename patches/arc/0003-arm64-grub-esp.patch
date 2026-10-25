@@ -1,0 +1,32 @@
+diff --git a/scripts/grub.sh b/scripts/grub.sh
+--- a/scripts/grub.sh
++++ b/scripts/grub.sh
+@@ -36,2 +36,12 @@
+-  ../configure --prefix="$PWD/usr" --sbindir="$PWD/sbin" --sysconfdir="$PWD/etc" \
++  configure_env=()
++  if [[ "${B}" == "arm64-efi" ]]; then
++    configure_env=(
++      TARGET_CC=aarch64-linux-gnu-gcc
++      TARGET_OBJCOPY=aarch64-linux-gnu-objcopy
++      TARGET_STRIP=aarch64-linux-gnu-strip
++      TARGET_NM=aarch64-linux-gnu-nm
++      TARGET_RANLIB=aarch64-linux-gnu-ranlib
++    )
++  fi
++  env "${configure_env[@]}" ../configure --prefix="$PWD/usr" --sbindir="$PWD/sbin" --sysconfdir="$PWD/etc" \
+     --disable-werror --target="${b[0]}" --with-platform="${b[1]}"
+@@ -54,7 +64,13 @@
+ # Create GRUB disk image
+ rm -f grub.img
+ dd if=/dev/zero of=grub.img bs=1M seek=3700 count=0
+-echo -e "n\np\n1\n\n+50M\nn\np\n2\n\n+50M\nn\np\n3\n\n\na\n1\nw\nq\n" | fdisk grub.img
++PARTITION_COMMANDS=$'n\np\n1\n\n+50M\nn\np\n2\n\n+50M\nn\np\n3\n\n\n'
++if [[ " ${BIOS} " == *" arm64-efi "* ]]; then
++  # UEFI removable media needs an EFI System Partition in the MBR table.
++  PARTITION_COMMANDS+=$'t\n1\nef\n'
++fi
++PARTITION_COMMANDS+=$'a\n1\nw\nq\n'
++printf '%s' "${PARTITION_COMMANDS}" | fdisk grub.img
+ fdisk -l grub.img
+ 
+ # Setup loop device

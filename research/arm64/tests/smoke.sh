@@ -6,8 +6,12 @@ repo_root=$(cd -- "$script_dir/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
 
-bash -n "$script_dir/"*.sh "$script_dir/tests/"*.sh
+bash -n "$script_dir/"*.sh "$script_dir/tests/"*.sh \
+  "$script_dir/loader/build.sh" \
+  "$script_dir/loader/board/arm64-kexec/grub-post-image.sh" \
+  "$script_dir/grub-loader/test.sh"
 bash "$repo_root/tests/platform.sh"
+python3 "$repo_root/tests/arm64-grub-loader.py"
 
 mkdir -p "$tmp/bin" "$tmp/image"
 printf 'fake-kernel' > "$tmp/image/Image"
