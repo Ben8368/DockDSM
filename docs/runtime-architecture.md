@@ -1,6 +1,8 @@
 # DockDSM 运行架构设计
 
-设计中；以下类型、接口、目录与操作名均为后续实现契约，不是现有 CLI 或配置语法。范围与顺序见 [ADR 0009](ADR/0009-owned-bootloader-source.md)和[实施计划](implementation-plan.md)，现有公开接口仍以 [platforms](platforms.md) 为准。
+`Profile`、`HostCapabilities`、`VMConfig`、`BootProvider` 与 `LaunchPlan` 的内部版本化契约已实现于 [boot_provider.py](../src/platform/boot_provider.py) 和 [schema](../src/platform/boot-provider.schema.json)；固定 profile resolver 见 [profile_registry.py](../src/platform/profile_registry.py)，legacy 事实绑定见 [legacy_provider.py](../src/platform/legacy_provider.py)。DSM resolver 只列出现有 `virtualdsm` 和 `rtd1619b`；研究 Profile 需要通过独立 research resolver 获取。容器内无法可靠得知外层宿主 CPU，`host_arch` 因此允许为 `null`；这不代表使用容器架构推断宿主。KVM 计划仍要求设备可访问、QEMU 探测成功、容器与 guest 架构匹配；若宿主架构已知，也必须匹配 guest。生产 `entry.sh` 现将旧平台最终 argv 交给 legacy Provider 构造 LaunchPlan，再由 `qemu-process` adapter 以原始 argv 执行；`execvpe` 保持 PID、信号和退出码。x86 KVM 在启动前探测，ARM 复用平台已有探测。公开配置语法和 QEMU 参数顺序未改变。其余控制层和运行时仍为设计。范围与顺序见 [ADR 0009](ADR/0009-owned-bootloader-source.md)和[实施计划](implementation-plan.md)，现有公开接口仍以 [platforms](platforms.md) 为准。
+
+另有内部研究 Provider：`x86_64-grub-iso` 为开放 Linux GRUB ISO 规划 QEMU TCG argv，`arm64-linux-kexec` 为开放 ARM64 Linux handoff 规划 argv。两者通过 `qemu-process` adapter 使用 `execvpe` 启动单个 QEMU 进程；它们仅供隔离研究目录使用，不是 DSM Profile，不接入生产注册表。旧 DSM 平台仍走原有 `entry.sh` 路径；各自构建与启动证据见 [x86 GRUB 实验](../research/x86_64/grub-loader/README.md)和 [ARM64 kexec 实验](../research/arm64/loader/README.md)。
 
 ## 分层与数据流
 
@@ -44,7 +46,7 @@ flowchart TB
 
 拟议操作为 validate、plan、start、inspect、request_shutdown、wait_stopped、diagnose、backup/restore。plan 不创建磁盘、不拉镜像、不联网取 PAT、不启动容器；start 在独占锁内重新验证计划和输入，避免计划与执行之间资源变化。重复 start 返回当前实例或明确冲突，不启动第二个写盘进程。
 
-argv 通过列表传递，禁止 eval/字符串 Shell。QEMU 选项内的逗号、路径、端口、设备 ID 按各自语法校验，数组不能自动解决 QEMU 子语法转义。保留现有 ARM 对自由 `ARGUMENTS`/QMP/MONITOR 覆盖的拒绝行为。
+argv 通过列表传递，禁止 eval/字符串 Shell。当前契约会解析 `-accel`、machine 的 `accel=` 和 KVM 别名，并要求与 LaunchPlan 的 accelerator 一致；未知或冲突值拒绝，避免计划声明 TCG 而 argv 请求 KVM。QEMU 选项内的逗号、路径、端口、设备 ID 按各自语法校验，数组不能自动解决 QEMU 子语法转义。保留现有 ARM 对自由 `ARGUMENTS`/QMP/MONITOR 覆盖的拒绝行为。
 
 ## 加速、网络与性能配置
 

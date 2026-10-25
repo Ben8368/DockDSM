@@ -33,6 +33,7 @@ with tempfile.TemporaryDirectory(prefix='virtualdsm-x86-command-') as tmp:
     bin_dir = directory / 'bin'
     bin_dir.mkdir()
     capture = directory / 'argv.json'
+    plan_capture = directory / 'plan-argv.json'
     network_log = directory / 'unexpected-network.log'
 
     qemu = bin_dir / 'qemu-system-x86_64'
@@ -73,13 +74,25 @@ platformValidateBinary
 last=$((${#QEMU_ARGS[@]} - 1))
 [[ "${QEMU_ARGS[$last]}" == "virtio-balloon-pci,id=balloon0,bus=pcie.0,addr=0x4" ]]
 [[ "${QEMU_ARGS[$last-1]}" == -device ]]
+set +e
 "$QEMU_BIN" "${QEMU_ARGS[@]}"
+qemu_status=$?
+set -e
+[[ "$qemu_status" == 37 ]]
+DSM_PLATFORM=virtualdsm GUEST_ARCH=amd64 PLATFORM=x64 QEMU_BIN=qemu-system-x86_64 \
+  MACHINE=q35 BOOT_MODE=legacy DOCKDSM_ARM_KVM_PROBED=false \
+  CONTAINER_ARCH=arm64 STORAGE=/isolated \
+  ARGV_CAPTURE="$PLAN_ARGV_CAPTURE" \
+  python3 src/platform/legacy_provider.py --exec-plan \
+  -machine type=q35,accel=tcg -cpu max -smp 2 -m 2G \
+  -drive file=/isolated/test.img
 '''
     env = os.environ.copy()
     env.update({
         'REPO': str(repo),
         'PATH': str(bin_dir) + os.pathsep + str(Path(bash).parent) + os.pathsep + env.get('PATH', '/usr/bin:/bin'),
         'ARGV_CAPTURE': str(capture),
+        'PLAN_ARGV_CAPTURE': str(plan_capture),
         'NETWORK_ATTEMPT_LOG': str(network_log),
         'X86_TEST_TRACE': env.get('X86_TEST_TRACE', ''),
     })
@@ -117,5 +130,13 @@ last=$((${#QEMU_ARGS[@]} - 1))
         raise SystemExit('FAIL: expected accepted q35 machine arguments')
     if actual[actual.index('-boot') + 1] != 'strict=on':
         raise SystemExit('FAIL: expected legacy strict boot arguments')
+    if not plan_capture.is_file():
+        raise SystemExit('FAIL: LaunchPlan runtime did not execute the fake QEMU')
+    planned_argv = json.loads(plan_capture.read_text())
+    if planned_argv != [
+        '-machine', 'type=q35,accel=tcg', '-cpu', 'max', '-smp', '2',
+        '-m', '2G', '-drive', 'file=/isolated/test.img',
+    ]:
+        raise SystemExit(f'FAIL: LaunchPlan runtime changed argv: {planned_argv!r}')
 
-print('Default x86 production command passed: virtualdsm/x64, snapshot argv, fake QEMU exit 37, no PAT/network, 30s timeout.')
+print('Default x86 snapshot and LaunchPlan runtime passed: exact argv, fake QEMU exit 37, no PAT/network, 30s timeout.')

@@ -1,0 +1,11 @@
+#!/bin/sh
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+echo DOCKDSM_KEXEC_TARGET_BOOTED
+/bin/busybox poweroff -f
+echo DOCKDSM_KEXEC_TARGET_POWEROFF_RETURNED
+exec sh

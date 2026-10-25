@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "source": "Buildroot",
+  "version": "2025.02.19",
+  "series": "2025.02.x LTS",
+  "url": "https://buildroot.org/downloads/buildroot-2025.02.19.tar.xz",
+  "sha256": "e5e58bff1da91f022f60cefdfe280140c08023cd0aeec1e5f6f9da0ea866d69c",
+  "license": "GPL-2.0-or-later",
+  "kernel": {
+    "version": "6.12.112",
+    "sha256": "164dc9d1f6c93c61a15e1f071c48379b467f2b17c469cce7223471968208ed03",
+    "sha256_source": "Buildroot 2025.02.19 linux/linux.hash, from kernel.org"
+  },
+  "purpose": "Locked Buildroot and Linux inputs for isolated x86_64 and ARM64 open-Linux boot research; not DSM images"
+}

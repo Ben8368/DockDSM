@@ -13,14 +13,15 @@ interfaces are in [runtime architecture](runtime-architecture.md); device valida
 scope, including RK3588 Docker-only and Mac container selection, is in the
 [test matrix](test-matrix.md). Proposed selectors and options are not accepted here.
 
-| Selector | HOST_ARCH | GUEST_ARCH | qemux PLATFORM | QEMU_BIN | Machine | Boot |
+| Selector | CONTAINER_ARCH | GUEST_ARCH | qemux PLATFORM | QEMU_BIN | Machine | Boot |
 |---|---|---|---|---|---|---|
 | `virtualdsm` | detected `amd64` or `arm64` | `amd64` | `x64` | `qemu-system-x86_64` | `q35` | legacy |
 | `rtd1619b` | detected `amd64` or `arm64` | `arm64` | `arm64` | `qemu-system-aarch64` | `virt`, GICv3 | direct kernel |
 
-`HOST_ARCH` describes the running host/container CPU environment (`uname -m`,
-normalized); the inherited qemux `ARCH` continues to describe its Debian image.
-Only `DSM_PLATFORM` selects DSM hardware policy. Unknown selectors fail early.
+`CONTAINER_ARCH` describes the runtime container CPU (`uname -m`, normalized); it
+does not identify the Docker host when emulation is involved. The inherited
+qemux `ARCH` continues to describe its Debian image. Only `DSM_PLATFORM` selects
+DSM hardware policy. Unknown selectors fail early.
 
 ## VirtualDSM installation recovery
 

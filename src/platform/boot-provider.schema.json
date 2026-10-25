@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dockdsm.invalid/schema/boot-provider-v1.json",
+  "title": "DockDSM Boot Provider contracts",
+  "description": "Internal planning contracts only; this schema does not register platform selectors or execute a VM.",
+  "$defs": {
+    "architecture": {
+      "type": "string",
+      "enum": ["amd64", "arm64"]
+    },
+    "nonemptyText": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000]+$"
+    },
+    "Profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "id", "dsm_platform", "guest_arch", "boot_provider", "qemu_machine", "bootloader_arch"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "id": {"$ref": "#/$defs/nonemptyText"},
+        "dsm_platform": {"$ref": "#/$defs/nonemptyText"},
+        "guest_arch": {"$ref": "#/$defs/architecture"},
+        "boot_provider": {"$ref": "#/$defs/nonemptyText"},
+        "qemu_machine": {"$ref": "#/$defs/nonemptyText"},
+        "bootloader_arch": {"anyOf": [{"$ref": "#/$defs/architecture"}, {"type": "null"}]}
+      }
+    },
+    "HostCapabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "host_arch", "container_arch", "qemu_binaries", "kvm_access", "kvm_probe"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "host_arch": {"anyOf": [{"$ref": "#/$defs/architecture"}, {"type": "null"}]},
+        "container_arch": {"$ref": "#/$defs/architecture"},
+        "qemu_binaries": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonemptyText"}},
+        "kvm_access": {"anyOf": [{"type": "boolean"}, {"type": "null"}]},
+        "kvm_probe": {"anyOf": [{"type": "boolean"}, {"type": "null"}]}
+      }
+    },
+    "VMConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "profile_id", "runtime_adapter", "storage_ref", "vcpus", "memory_mib"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "profile_id": {"$ref": "#/$defs/nonemptyText"},
+        "runtime_adapter": {"$ref": "#/$defs/nonemptyText"},
+        "storage_ref": {"$ref": "#/$defs/nonemptyText"},
+        "vcpus": {"type": "integer", "minimum": 1},
+        "memory_mib": {"type": "integer", "minimum": 1}
+      }
+    },
+    "LaunchPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "profile_id", "boot_provider", "host_arch", "container_arch", "guest_arch", "bootloader_arch", "qemu_machine", "runtime_adapter", "storage_ref", "qemu_argv", "accelerator"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "profile_id": {"$ref": "#/$defs/nonemptyText"},
+        "boot_provider": {"$ref": "#/$defs/nonemptyText"},
+        "host_arch": {"anyOf": [{"$ref": "#/$defs/architecture"}, {"type": "null"}]},
+        "container_arch": {"$ref": "#/$defs/architecture"},
+        "guest_arch": {"$ref": "#/$defs/architecture"},
+        "bootloader_arch": {"anyOf": [{"$ref": "#/$defs/architecture"}, {"type": "null"}]},
+        "qemu_machine": {"$ref": "#/$defs/nonemptyText"},
+        "runtime_adapter": {"$ref": "#/$defs/nonemptyText"},
+        "storage_ref": {"$ref": "#/$defs/nonemptyText"},
+        "qemu_argv": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[^\\u0000]*$"}},
+        "accelerator": {"enum": ["kvm", "tcg"]}
+      }
+    }
+  }
+}

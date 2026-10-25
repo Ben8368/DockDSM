@@ -67,6 +67,13 @@
 - **当前策略：** 依赖身份、SHA256、当前 amd64 APT 解析版本见[依赖清单](dependency-locks.md)。不猜测 snapshot 日期或包版本；维持现有双架构构建和生产 QEMU 补丁流程。
 - **关闭证据：** 为 amd64/arm64 确认 Debian snapshot 和完整安装闭包，记录包来源身份，并核实 qemux 基础镜像上游构建来源；原生两架构构建与镜像回归通过。
 
+### RISK-010（P1）：kexec 后继承的 GICv3 LPI 表覆盖 target kernel
+
+- **阻断 Gate：** ARM64 Bootloader 的 DS124/GICv3 kexec 兼容性声明；不阻断开放 Linux 的 GICv2 或 GICv3 ITS-off 研究 smoke。
+- **问题：** 原 `kexec_file_load`（`kexec -s`）路径即使传入 `--mem-min=0x42000000`，仍将 Buildroot/Linux 6.12.112 target kernel 放在 `0x41000000`，与 loader LPI property/pending tables (`0x41060000`/`0x41070000`) 重叠；target 重置 64 KiB property table 时覆盖自身文本并 Oops。改用 legacy `kexec_load`（`kexec -c`）后，下界生效，open Linux GICv3/A55/ITS-on 在 loader LPI 保持开启时从 `0x42000000` 开始加载并通过 handoff。官方 DS124 7.2.2-72806 在 loader LPI 开启时虽到达 login，但输出 `Booted with LPIs enabled, memory probably corrupted`，并进入内核 damage-control 路径、taint 后关闭 LPI；故 DS124 研究 provider 继续要求 loader-only `irqchip.gicv3_nolpi=1`。结合 `kexec_load --mem-min` 后，DS124 diskless handoff 所有段均位于 `0x42000000` 以上，loader 与 target 不再有该警告，DSM target 在 `0x40170000` 分配新 property table并到达 login。
+- **证据与边界：** 配置、命令和日志见[ARM64 loader 研究记录](../research/arm64/loader/README.md)。2026-10-25 官方 DS124 72806 内核使用通用 `linux,dummy-virt` DTB，在同一 patched QEMU TCG VM 经 kexec 到无盘 login；独立 scratch probe 发现 `rtk_ahci`、SATA link、`QEMU HARDDISK` 和 4,194,304 扇区。stock DSM initrd 在 snapshot-backed 2 GiB sparse scratch 上再次到达 login，预期 timeout 后 backing 仍为 mode 0600、单链接、0 allocated blocks。patched sysbus AHCI 对 `readonly=on` 在 guest 启动前报 `Block node is read-only`；通过配置让 guest 看见可写临时 COW overlay，验证只证明 backing 未改变，不证明 guest 设备为只读。上述证据不证明 DSM 用户数据盘、分区、卷、网络、安装、持久化、管理面或设备验收。研究参数不进入生产 profile。
+- **关闭证据：** 对选定 QEMU `virt`/补丁契约验证设备树、内存、CPU、串口、存储和网络；在独立测试盘完成 DSM 安装、持久化、干净关机与恢复，并证明 ITS 生命周期安全。TCG 登录提示不等于 DS124 硬件或 DSM 生命周期验收。
+
 ## 已关闭风险
 
 - [RISK-001：Phase 3 严格 F5](archive/risks/2026-10.md#risk-001)。

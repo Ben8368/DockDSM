@@ -14,6 +14,9 @@ finalizeMemory() { :; }
 unset DSM_PLATFORM PLATFORM QEMU_BIN MACHINE BOOT_MODE
 platformInit
 [[ "$DSM_PLATFORM:$GUEST_ARCH:$PLATFORM:$QEMU_BIN:$MACHINE:$BOOT_MODE" == virtualdsm:amd64:x64:qemu-system-x86_64:q35:legacy ]]
+DSM_PLATFORM="$DSM_PLATFORM" GUEST_ARCH="$GUEST_ARCH" PLATFORM="$PLATFORM" \
+  QEMU_BIN="$QEMU_BIN" MACHINE="$MACHINE" BOOT_MODE="$BOOT_MODE" \
+  python3 tests/boot-provider-legacy.py --check-env
 # Original x86 argument snapshot and pinned config/serial/shared PAT helpers.
 # Installer state preservation is exercised by x86-installer-regression.py.
 bash tests/fixtures/x86-baseline.sh > "$tmp/x86.args"
@@ -22,6 +25,12 @@ sha256sum -c tests/fixtures/x86-scripts.sha256
 ARGS=$(<"$tmp/x86.args")
 platformBuildCommand
 [[ "${QEMU_ARGS[2]}" == type=q35,* ]]
+# These capabilities model the fixture's argv only; no host KVM probe runs.
+DSM_PLATFORM="$DSM_PLATFORM" GUEST_ARCH="$GUEST_ARCH" PLATFORM="$PLATFORM" \
+  QEMU_BIN="$QEMU_BIN" MACHINE="$MACHINE" BOOT_MODE="$BOOT_MODE" \
+  PLAN_HOST_ARCH=amd64 PLAN_CONTAINER_ARCH=amd64 PLAN_ACCELERATOR=kvm \
+  PLAN_KVM_ACCESS=true PLAN_KVM_PROBE=true \
+  python3 tests/boot-provider-legacy.py --plan-argv "${QEMU_ARGS[@]}"
 STORAGE=$tmp BASE=dsm DISK_TYPE=scsi DISK_OPTS=''
 printf boot > "$tmp/dsm.boot.img"
 printf system > "$tmp/dsm.system.img"
@@ -35,12 +44,16 @@ printf 'stage_loaded=install\n' > "$tmp/install.sh"
 (cd "$tmp"; platformRunStage install; [[ "$stage_loaded" == install ]])
 if (DSM_PLATFORM='rtd1619b;touch injected'; platformInit) >/dev/null 2>&1; then exit 1; fi
 if (DSM_PLATFORM=unknown; platformInit) >/dev/null 2>&1; then exit 1; fi
+if (DSM_PLATFORM=virtualdsm MACHINE=pc-q35 platformInit) >/dev/null 2>&1; then exit 1; fi
 DSM_PLATFORM=rtd1619b
 # Stable host launch time for the ARM argument snapshot.
 date() { if [[ "$*" == '-u +%s' ]]; then printf '1704067200\n'; else command date "$@"; fi; }
 platformInit
 [[ "$GUEST_ARCH:$PLATFORM:$QEMU_BIN:$MACHINE:$BOOT_MODE" == arm64:arm64:qemu-system-aarch64:virt:direct ]]
-HOST_ARCH=amd64 CPU_CORES=2 RAM_SIZE=2G APP='Virtual DSM' PROCESS=virtual-dsm
+DSM_PLATFORM="$DSM_PLATFORM" GUEST_ARCH="$GUEST_ARCH" PLATFORM="$PLATFORM" \
+  QEMU_BIN="$QEMU_BIN" MACHINE="$MACHINE" BOOT_MODE="$BOOT_MODE" \
+  python3 tests/boot-provider-legacy.py --check-env
+CONTAINER_ARCH=amd64 CPU_CORES=2 RAM_SIZE=2G APP='Virtual DSM' PROCESS=virtual-dsm
 QEMU_DIR=$tmp QEMU_PID=/run/shm/qemu.pid WEB_PORT=5000 DSM_HTTPS_PORT=5001
 KERNEL_IMAGE=/storage/DSM_DS124_72806.kernel INITRD_IMAGE=/storage/DSM_DS124_72806.initrd
 SYSTEM_IMAGE=/storage/DSM_DS124_72806.system.img
@@ -53,7 +66,7 @@ platformKvmDeviceAccessible() { [[ "${mock_kvm_access:-yes}" == yes ]]; }
 platformKvmProbe() { [[ "${mock_kvm_probe:-yes}" == yes ]]; }
 platformConfigureCpu
 [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == tcg,thread=multi:max,lpa2=off:N && ${#warnings[@]} == 0 ]]
-HOST_ARCH=arm64
+CONTAINER_ARCH=arm64
 mock_kvm_node=yes mock_kvm_access=yes mock_kvm_probe=yes
 platformConfigureCpu
 [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == kvm:host:Y && ${#ARM_CPU_ARGS[@]} == 6 ]]
@@ -72,13 +85,18 @@ for scenario in missing inaccessible init-failure; do
   [[ ${#warnings[@]} == 1 && "${warnings[0]}" == *"$expected"* && "${warnings[0]}" == *'substantially slower'* ]]
 done
 unset mock_kvm_node mock_kvm_access mock_kvm_probe
-HOST_ARCH=amd64
+CONTAINER_ARCH=amd64
 platformPrepareSystemDisks
 platformConfigureNetwork
 QEMU_DIR=/run/shm
 platformConfigureArguments
 printf '%s\n' "${QEMU_ARGS[@]}" > "$tmp/arm.args"
 diff -u tests/fixtures/rtd1619b.args "$tmp/arm.args"
+DSM_PLATFORM="$DSM_PLATFORM" GUEST_ARCH="$GUEST_ARCH" PLATFORM="$PLATFORM" \
+  QEMU_BIN="$QEMU_BIN" MACHINE="$MACHINE" BOOT_MODE="$BOOT_MODE" \
+  PLAN_HOST_ARCH=amd64 PLAN_CONTAINER_ARCH=amd64 PLAN_ACCELERATOR=tcg \
+  PLAN_KVM_ACCESS=false PLAN_KVM_PROBE=false \
+  python3 tests/boot-provider-legacy.py --plan-argv "${QEMU_ARGS[@]}"
 if grep -E 'q35|smm=|vmport=|hpet=|pcie[.]|virtio-.*-pci|synoboot|synosys|e1000' "$tmp/arm.args"; then exit 1; fi
 for port in 0 65536 -1 '5000,hostfwd=tcp::22-:22' '5000;touch injected' '$(touch injected)'; do
   if (WEB_PORT="$port"; platformNetworkBackend) >/dev/null 2>&1; then exit 1; fi

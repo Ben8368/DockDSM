@@ -50,12 +50,11 @@ models and firmware. Its source install explicitly includes `qemu-system-arm`
 and AAVMF; the base x86 image's `qemu-system-x86` package is insufficient for
 the native ARM guest.
 
-The key variables are distinct: `HOST_ARCH` describes the container host,
-`GUEST_ARCH` describes the emulated processor, and a DSM platform selects the
-guest image/model. Today the repo has no explicit platform-selection layer:
-`PLATFORM=x64` and the hardcoded emulator implement VirtualDSM. The base KVM
-logic may disable acceleration for an architecture mismatch; an ARM host with
-an x86 guest is not ARM KVM acceleration. `qemus/qemu-arm` uses separate ARM
+The key variables are distinct: `CONTAINER_ARCH` describes the runtime container,
+`GUEST_ARCH` describes the emulated processor, and `DSM_PLATFORM` selects one
+of the two existing legacy guest profiles. The new loader profiles are not
+registered. The base KVM logic may disable acceleration for an architecture
+mismatch; an ARM host with an x86 guest is not ARM KVM acceleration. `qemus/qemu-arm` uses separate ARM
 hooks (`entry.sh`, `boot.sh`, `config.sh`, `proc.sh`, `display.sh`) and
 `qemu-system-aarch64`, `MACHINE=virt`, ARM CPU/GIC settings, and ARM firmware.
 Its Debian install adds `qemu-system-arm`; these are useful references, not

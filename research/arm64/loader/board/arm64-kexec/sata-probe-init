@@ -1,0 +1,32 @@
+#!/bin/sh
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+echo DOCKDSM_DS124_SATA_PROBE_INIT
+
+attempt=0
+while [ "$attempt" -lt 30 ] && [ ! -r /sys/block/sata1/size ]; do
+  attempt=$((attempt + 1))
+  sleep 1
+done
+
+if [ ! -b /dev/sata1 ] || [ ! -r /sys/block/sata1/size ]; then
+  echo DOCKDSM_DS124_SATA_PROBE_FAIL_NO_BLOCK_DEVICE
+  exit 1
+fi
+
+sectors=$(cat /sys/block/sata1/size)
+cat /proc/partitions
+if [ "$sectors" != 4194304 ]; then
+  echo "DOCKDSM_DS124_SATA_PROBE_FAIL_SIZE sectors=$sectors"
+  exit 1
+fi
+
+echo "DOCKDSM_DS124_SATA_PROBE_PASS sectors=$sectors"
+sync
+/bin/busybox poweroff -f
+echo DOCKDSM_DS124_SATA_PROBE_ERROR_POWEROFF_RETURNED
+exec sh

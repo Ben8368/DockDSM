@@ -4,7 +4,8 @@ import json
 import os
 import sys
 
-REQUIRED = {'plan', 'docs', 'lint', 'tests', 'qemu-patches', 'research-smoke', 'images'}
+REQUIRED = {'plan', 'docs', 'lint', 'tests', 'qemu-patches', 'research-smoke',
+            'arm64-loader', 'x86_64-loader', 'images'}
 
 
 def failures(needs: dict) -> list[str]:
