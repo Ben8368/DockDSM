@@ -231,6 +231,19 @@ class OverlayTests(unittest.TestCase):
         self.assertIn('gcc-aarch64-linux-gnu', workflow)
         self.assertIn('"ARC"', workflow)
 
+    def test_arm64_dsm_kernel_is_selected_after_searching_arc3(self):
+        grub = (ROOT / 'patches/arc/0002-arm64-grub-menu.patch').read_text(
+            encoding='utf-8')
+        search = ' search --set=root --label "ARC3" --no-floppy'
+        select_kernel = '+  if [ -s /Image-dsm ]; then\n+    set DSM_KERNEL="/Image-dsm"'
+        self.assertIn(search, grub)
+        self.assertIn(select_kernel, grub)
+        self.assertLess(grub.index(search), grub.index(select_kernel))
+        arm_setup = grub.split('+  set ARC_KERNEL=', 1)[1]
+        arm_setup = arm_setup.split('\n+else', 1)[0]
+        self.assertNotIn('/Image-dsm', arm_setup)
+        self.assertIn('+  set DSM_KERNEL="/zImage-dsm"', arm_setup)
+
     def test_arm64_update_package_includes_grub_efi_modules(self):
         workflow = (ROOT / 'patches/arc/0006-arm64-update-workflow.patch').read_text(
             encoding='utf-8')

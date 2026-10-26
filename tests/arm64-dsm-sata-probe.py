@@ -56,6 +56,17 @@ valid_log = "\n".join((
 ))
 verifier.verify(valid_log)
 verifier.verify(valid_log + "\nprintk: debug: harmless diagnostic\n")
+for failure_marker in (
+    "DOCKDSM_DS124_SATA_PROBE_FAIL_NO_BLOCK_DEVICE",
+    "DOCKDSM_DS124_SATA_PROBE_FAIL_SIZE sectors=1024",
+):
+    try:
+        verifier.verify(valid_log.replace(
+            "DOCKDSM_DS124_SATA_PROBE_PASS sectors=4194304", failure_marker))
+    except ValueError as error:
+        assert "DOCKDSM_DS124_SATA_PROBE_FAIL_" in str(error)
+    else:
+        raise AssertionError("SATA probe verifier accepted a failure marker")
 for bad in (
     valid_log.replace("ata1: SATA link up 1.5 Gbps", "ata1: SATA link down"),
     valid_log.replace("   8        0    2097152 sata1", "   8        0       1024 sata1"),
@@ -74,6 +85,21 @@ host = HostCapabilities("arm64", "arm64", ("qemu-system-aarch64",), False, False
 diskless_config = VMConfig(profile.id, "qemu-process", "none", 2, 2048)
 kernel = Path(__file__).resolve()
 initrd = Path(ROOT / "research/arm64/loader/board/arm64-kexec/sata-probe-init")
+init_text = initrd.read_text(encoding="utf-8")
+for branch, marker in (
+    ("if [ ! -b /dev/sata1 ] || [ ! -r /sys/block/sata1/size ]; then",
+     "DOCKDSM_DS124_SATA_PROBE_FAIL_NO_BLOCK_DEVICE"),
+    ('if [ "$sectors" != 4194304 ]; then',
+     'DOCKDSM_DS124_SATA_PROBE_FAIL_SIZE sectors=$sectors'),
+):
+    start = init_text.index(branch)
+    end = init_text.index("\nfi", start)
+    failure_path = init_text[start:end]
+    assert marker in failure_path
+    assert failure_path.index(marker) < failure_path.index("sync")
+    assert failure_path.index("sync") < failure_path.index("poweroff -f")
+    assert failure_path.index("poweroff -f") < failure_path.index("exec sh")
+    assert "exit 1" not in failure_path
 provider = LinuxKexecProvider(DSM_PROVIDER_ID)
 
 with tempfile.TemporaryDirectory(prefix="dockdsm-dsm-sata-probe-") as temporary:

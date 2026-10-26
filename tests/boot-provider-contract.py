@@ -78,8 +78,8 @@ arm_kvm_plan = QemuArgvProvider("rtd1619b-direct").build_plan(
 assert arm_kvm_plan.accelerator == "kvm"  # Synthetic capability input; no host probe ran.
 
 # A container cannot reliably observe its outer host architecture. Unknown is
-# represented as null; KVM still requires accessible /dev/kvm and a successful
-# QEMU probe, while the container and guest architectures must match.
+# represented as null; KVM requires accessible /dev/kvm and rejects a failed
+# QEMU probe, while a timed-out (unknown) probe is left to the actual launch.
 unknown_host = HostCapabilities(None, "arm64", ("qemu-system-aarch64",), True, True)
 unknown_host_plan = QemuArgvProvider("rtd1619b-direct").build_plan(
     arm_profile, arm_config, unknown_host,
@@ -88,9 +88,15 @@ unknown_host_plan = QemuArgvProvider("rtd1619b-direct").build_plan(
 assert unknown_host_plan.host_arch is None
 assert type(unknown_host_plan).from_dict(unknown_host_plan.to_dict()) == unknown_host_plan
 assert HostCapabilities.from_dict(unknown_host.to_dict()) == unknown_host
+unknown_probe = HostCapabilities(None, "arm64", ("qemu-system-aarch64",), True, None)
+unknown_probe_plan = QemuArgvProvider("rtd1619b-direct").build_plan(
+    arm_profile, arm_config,
+    unknown_probe,
+    ("qemu-system-aarch64", "-M", "virt", "-accel", "kvm"), "kvm")
+assert unknown_probe_plan.accelerator == "kvm"
 rejects(lambda: QemuArgvProvider("rtd1619b-direct").build_plan(
     arm_profile, arm_config,
-    HostCapabilities(None, "arm64", ("qemu-system-aarch64",), True, None),
+    HostCapabilities("arm64", "arm64", ("qemu-system-aarch64",), True, False),
     ("qemu-system-aarch64", "-M", "virt", "-accel", "kvm"), "kvm"))
 
 x86_kvm_host = HostCapabilities("amd64", "amd64", ("qemu-system-x86_64",), True, True)

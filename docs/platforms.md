@@ -23,6 +23,10 @@ does not identify the Docker host when emulation is involved. The inherited
 qemux `ARCH` continues to describe its Debian image. Only `DSM_PLATFORM` selects
 DSM hardware policy. Unknown selectors fail early.
 
+`DOCKDSM_HOST_ARCH` optionally supplies the Docker host CPU when the runtime
+cannot detect it. It accepts normalized `amd64`/`arm64` and `uname -m` spellings
+`x86_64`/`x86_64h`/`aarch64`; these are canonicalized before architecture checks.
+
 ## VirtualDSM installation recovery
 
 The x86 installer reuses a complete nonempty boot/system image pair for the
@@ -103,11 +107,13 @@ trigger rebuilding. See [ARM runtime state](arm64-runtime-state.md).
 
 DS124 on an amd64 host uses `-accel tcg,thread=multi -cpu max,lpa2=off`; startup
 is substantially slower than KVM. On ARM64, requested KVM requires matching
-host/guest architecture, accessible `/dev/kvm`, and a successful paused
-virt/GICv3 initialization probe using `-accel kvm -cpu host`. Missing or
-inaccessible KVM, or a failed QEMU probe, falls back to TCG with one actionable
-warning. `KVM=N` explicitly selects TCG without a downgrade warning. The CPU
-policies remain accelerator-specific; `lpa2=off` is not added to KVM.
+host/guest architecture and accessible `/dev/kvm`. A successful paused
+virt/GICv3 initialization probe using `-accel kvm -cpu host` permits launch;
+missing or inaccessible KVM, or a failed probe, falls back to TCG with one
+actionable warning. A probe timeout is inconclusive, so DockDSM attempts the
+requested KVM launch and reports any QEMU failure without claiming that KVM
+works. `KVM=N` explicitly selects TCG without a downgrade warning. CPU policies
+remain accelerator-specific; `lpa2=off` is not added to KVM.
 
 Accepted KVM evidence is Apple MacBook Air M5 running macOS, Colima Apple VZ,
 ARM64 Ubuntu and nested KVM. It validates that environment only. Bare-metal

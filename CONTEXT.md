@@ -28,7 +28,7 @@
 
 ## 最近验证
 
-- 2026-10-26：WSL2 amd64 镜像回归通过：架构、QEMU 失败分类、x86 命令及 DC ZVA 系统/watchpoint/migration。[证据](tests/qemu-dcz/README.md)；不等同于原生 Linux/KVM。
+- 2026-10-26：WSL2 amd64 镜像回归及 PR #25 ARC/ARM64/x86 合成检查通过；本轮未跑真实 ARM64 UEFI 冷启动。[证据](tests/qemu-dcz/README.md)；不等同于原生 Linux/KVM。
 - 2026-10-25：DS124 stock initrd 在 2 GiB snapshot scratch 到达 login；原盘未变，未验收安装/生命周期。[记录](research/arm64/loader/README.md)
 - 2026-10-25：ARM64 Linux/DS124 TCG kexec 到 login；DS124 LPI 开时 taint，设备/生命周期未验收。[记录](research/arm64/loader/README.md)
 - 2026-10-25：x86_64 ISO 两次构建哈希一致，SeaBIOS/OVMF TCG 启动并关机；DSM 未测。[记录](research/x86_64/grub-loader/README.md)

@@ -31,7 +31,8 @@ def main() -> int:
     parser.add_argument("--uefi", action="store_true",
                         help="boot with explicit OVMF code and variable-store images")
     parser.add_argument("--firmware-code")
-    parser.add_argument("--firmware-vars")
+    parser.add_argument("--firmware-vars",
+                        help="writable disposable OVMF variable-store copy (QEMU modifies it; do not pass the shared template)")
     parser.add_argument("--execute", action="store_true",
                         help="exec QEMU through the qemu-process runtime adapter")
     args = parser.parse_args()
