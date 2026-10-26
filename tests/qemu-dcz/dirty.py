@@ -12,14 +12,33 @@ import tempfile
 import time
 
 
+class QMPHandshakeError(RuntimeError):
+    pass
+
+
 class QMP:
     def __init__(self, path):
         self.sock = socket.socket(socket.AF_UNIX)
         self.sock.settimeout(10)
         self.sock.connect(str(path))
         self.f = self.sock.makefile('rwb')
-        assert 'QMP' in json.loads(self.f.readline())
+        greeting = self.f.readline()
+        if not greeting:
+            self.close()
+            raise QMPHandshakeError('QMP disconnected before greeting')
+        try:
+            value = json.loads(greeting)
+        except json.JSONDecodeError as exc:
+            self.close()
+            raise QMPHandshakeError('invalid QMP greeting') from exc
+        if 'QMP' not in value:
+            self.close()
+            raise QMPHandshakeError(f'unexpected QMP greeting: {value!r}')
         self.execute('qmp_capabilities')
+
+    def close(self):
+        self.f.close()
+        self.sock.close()
 
     def execute(self, name, arguments=None):
         req = {'execute': name}
@@ -36,6 +55,23 @@ class QMP:
                 return value['return']
             if 'error' in value:
                 raise RuntimeError(value['error'])
+
+
+def connect_qmp(path, process, deadline, label):
+    last_error = None
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(f'{label} exited with status {process.returncode}')
+        if not path.exists():
+            time.sleep(0.02)
+            continue
+        try:
+            return QMP(path)
+        except (ConnectionRefusedError, FileNotFoundError, QMPHandshakeError, OSError) as exc:
+            last_error = exc
+            time.sleep(0.02)
+    detail = f'; last error: {last_error}' if last_error else ''
+    raise RuntimeError(f'{label} did not become ready before timeout{detail}')
 
 
 def main():
@@ -67,11 +103,10 @@ def main():
             proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
             dest = None
             try:
+                q = connect_qmp(endpoint, proc, time.monotonic() + 10, 'source QMP')
                 deadline = time.monotonic() + 10
-                while not endpoint.exists() and time.monotonic() < deadline:
-                    time.sleep(0.02)
-                q = QMP(endpoint)
                 while 'DCZ_MIGRATION_READY' not in (a.output / 'serial.log').read_text():
+                    assert proc.poll() is None, 'source QEMU exited before migration readiness'
                     assert time.monotonic() < deadline
                     time.sleep(0.02)
                 q.execute('migrate-set-parameters', {'max-bandwidth': 4 * 1024 * 1024,
@@ -110,11 +145,8 @@ def main():
                 dest = subprocess.Popen(common + ['-S', '-incoming', f'exec:cat {shlex.quote(str(stream))}',
                      '-qmp', f'unix:{destination_endpoint},server=on,wait=off'],
                      stdout=dest_log, stderr=subprocess.STDOUT)
+                d = connect_qmp(destination_endpoint, dest, time.monotonic() + 15, 'destination QMP')
                 deadline = time.monotonic() + 15
-                while not destination_endpoint.exists():
-                    assert time.monotonic() < deadline
-                    time.sleep(0.02)
-                d = QMP(destination_endpoint)
                 while d.execute('query-status')['status'] == 'inmigrate':
                     assert time.monotonic() < deadline
                     time.sleep(0.05)
