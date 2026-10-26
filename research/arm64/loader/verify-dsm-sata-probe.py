@@ -23,14 +23,14 @@ PARTITION = re.compile(r"^\s*8\s+0\s+2097152\s+sata1\s*$", re.MULTILINE)
 
 
 def verify(text: str) -> None:
+    match = FORBIDDEN.search(text)
+    if match:
+        raise ValueError("forbidden DS124 SATA probe failure signature: " + match.group(0))
     missing = [marker for marker in REQUIRED if marker not in text]
     if missing:
         raise ValueError("missing DS124 SATA probe evidence: " + ", ".join(missing))
     if not PARTITION.search(text):
         raise ValueError("the 2 GiB /dev/sata1 block geometry was not printed")
-    match = FORBIDDEN.search(text)
-    if match:
-        raise ValueError("forbidden DS124 SATA probe failure signature: " + match.group(0))
     if "DOCKDSM_DS124_SATA_PROBE_ERROR_POWEROFF_RETURNED" in text:
         raise ValueError("guest poweroff unexpectedly returned")
 

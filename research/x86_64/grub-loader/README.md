@@ -37,6 +37,9 @@ research/x86_64/grub-loader/test.sh "$output_dir" --uefi \
   /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_VARS_4M.fd
 ```
 
+`--firmware-vars` must name a writable disposable copy of the OVMF template;
+QEMU may modify it. The repository test runner creates and removes that copy.
+
 `build.sh` refuses macOS, a mismatched Buildroot release, repository-local
 output, an unmarked nonempty output directory, or a download cache that overlaps
 the repository or output. `DOWNLOADS_DIR` is optional; if omitted, downloads

@@ -161,7 +161,9 @@ def _probe_kvm(qemu_path: str, machine: str, device: str = "/dev/kvm") -> tuple[
         result = subprocess.run(command, input="quit\n", text=True,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                 timeout=10, check=False)
-    except (OSError, subprocess.TimeoutExpired):
+    except subprocess.TimeoutExpired:
+        return True, None
+    except OSError:
         return True, False
     return True, result.returncode == 0
 

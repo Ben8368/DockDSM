@@ -135,6 +135,9 @@ with tempfile.TemporaryDirectory(prefix="dockdsm-x86-grub-") as tmp:
     efi_args = tuple(item.decode() for item in efi_cli.stdout.split(b"\0")[:-1])
     assert efi_args[efi_args.index("-drive") + 1] == (
         f"if=pflash,format=raw,readonly=on,file={firmware_code.resolve()}")
+    help_result = subprocess.run([sys.executable, str(cli), "--help"],
+                                 check=True, capture_output=True, text=True)
+    assert "writable disposable OVMF variable-store copy" in help_result.stdout
     assert "--firmware-code/--firmware-vars require --uefi" in subprocess.run(
         [sys.executable, str(cli), "--iso", str(iso), "--firmware-code", str(firmware_code)],
         capture_output=True, text=True).stderr
@@ -231,6 +234,7 @@ verifier.verify(valid_transcript)
 for invalid_transcript in (
     "SeaBIOS\n",
     "SeaBIOS\n" + verifier.MARKER + "\n",
+    "SeaBIOS\nreboot: Power down\n" + verifier.MARKER + "\n",
     valid_transcript + verifier.MARKER + "\n",
     valid_transcript.replace(verifier.MARKER, "prefix " + verifier.MARKER),
     valid_transcript + "Kernel panic - not syncing: fixture\n",

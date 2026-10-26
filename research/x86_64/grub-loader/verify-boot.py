@@ -20,10 +20,11 @@ FAILURES = (
 
 def verify(transcript: str) -> None:
     normalized = transcript.replace("\r", "")
-    if sum(line == MARKER for line in normalized.splitlines()) != 1:
+    lines = normalized.splitlines()
+    if lines.count(MARKER) != 1:
         raise ValueError("expected exactly one standalone x86_64 Linux boot marker")
     if not any(line in ("reboot: Power down", "reboot: Power Off")
-               for line in normalized.splitlines()):
+               for line in lines[lines.index(MARKER) + 1:]):
         raise ValueError("Linux boot marker was not followed by a guest poweroff")
     if any(pattern.search(normalized) for pattern in FAILURES):
         raise ValueError("kernel failure signature found in QEMU serial output")

@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 import tempfile
 import time
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src/platform"))
@@ -114,6 +115,14 @@ arm_plan = arm.provider.build_plan(
     HostCapabilities("arm64", "arm64", (arm.qemu_binary,), False, None),
     (arm.qemu_binary, "-machine", "virt,gic-version=3"), "tcg")
 assert x86_plan.guest_arch == "amd64" and arm_plan.guest_arch == "arm64"
+
+for host_arch, expected in (("x86_64", "amd64"), ("x86_64h", "amd64"),
+                            ("aarch64", "arm64")):
+    arch_environment = {**legacy_x86_environment, "DOCKDSM_HOST_ARCH": host_arch}
+    arch_plan = build_legacy_launch_plan(
+        arch_environment,
+        ["-machine", "type=q35,accel=tcg", "-smp", "1", "-m", "128"])
+    assert arch_plan.host_arch == expected
 
 for altered in (
     LegacyPlatformFacts("full-x86_64", "amd64", "x64", "qemu-system-x86_64", "q35", "legacy"),
@@ -222,6 +231,32 @@ with tempfile.TemporaryDirectory(prefix="legacy-kvm-reject-") as tmp:
     else:
         raise AssertionError("failed synthetic KVM probe was accepted")
     assert probe_marker.read_text() == "called"
+
+# A probe timeout is inconclusive rather than proof that KVM initialization
+# failed; the actual QEMU launch will determine whether KVM is usable.
+with tempfile.TemporaryDirectory(prefix="legacy-kvm-timeout-") as tmp:
+    root = Path(tmp)
+    bindir = root / "bin"
+    bindir.mkdir()
+    fake_qemu = bindir / "qemu-system-x86_64"
+    fake_qemu.write_text(f"#!{sys.executable}\nraise SystemExit(0)\n")
+    fake_qemu.chmod(0o755)
+    device = root / "kvm"
+    device.write_bytes(b"synthetic")
+    device.chmod(0o600)
+    kvm_environment = {
+        "DSM_PLATFORM": "virtualdsm", "GUEST_ARCH": "amd64", "PLATFORM": "x64",
+        "QEMU_BIN": "qemu-system-x86_64", "MACHINE": "q35", "BOOT_MODE": "legacy",
+        "CONTAINER_ARCH": "amd64", "STORAGE": "/isolated", "PATH": str(bindir),
+    }
+    with patch("legacy_provider.subprocess.run",
+               side_effect=subprocess.TimeoutExpired("qemu", 10)):
+        assert _probe_kvm(str(fake_qemu), "type=q35", str(device)) == (True, None)
+        timeout_plan = build_legacy_launch_plan(
+            kvm_environment,
+            ["-machine", "type=q35,accel=kvm", "-enable-kvm", "-smp", "1", "-m", "128"],
+            kvm_device=str(device))
+    assert timeout_plan.accelerator == "kvm"
 
 # execvpe must retain the process ID and forward a termination signal to QEMU.
 with tempfile.TemporaryDirectory(prefix="legacy-qemu-signal-") as tmp:

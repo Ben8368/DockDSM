@@ -12,7 +12,7 @@ diff --git a/files/p1/boot/grub/grub.cfg b/files/p1/boot/grub/grub.cfg
    else
      insmod vbe
      insmod vga
-@@ -70,15 +72,37 @@
+@@ -70,15 +72,34 @@
  
  # Menu on serial, output only: any byte on an input terminal cancels the
  # timeout, and noise on an unconnected serial line would stop autoboot
@@ -42,9 +42,6 @@ diff --git a/files/p1/boot/grub/grub.cfg b/files/p1/boot/grub/grub.cfg
 +  fi
 +  set ARC_KERNEL="/Image-${system_version}"
 +  set DSM_KERNEL="/zImage-dsm"
-+  if [ -s /Image-dsm ]; then
-+    set DSM_KERNEL="/Image-dsm"
-+  fi
 +else
 +  set ARC_CMDLINE="earlyprintk earlycon=uart8250,io,0x3f8,115200n8 console=ttyS0,115200n8 root=/dev/ram rootwait intremap=off amd_iommu_intr=legacy net.ifnames=0 panic=5 split_lock_detect=off pcie_aspm=off intel_pstate=disable amd_pstate=disable nox2apic nomodeset nowatchdog"
 +  set ARC_KERNEL="/bzImage-${system_version}"
@@ -53,8 +50,13 @@ diff --git a/files/p1/boot/grub/grub.cfg b/files/p1/boot/grub/grub.cfg
  
  insmod part_gpt
  insmod part_msdos
-@@ -87,7 +111,7 @@
+@@ -87,7 +108,12 @@
  search --set=root --label "ARC3" --no-floppy
++if [ "${grub_cpu}" = "arm64" ]; then
++  if [ -s /Image-dsm ]; then
++    set DSM_KERNEL="/Image-dsm"
++  fi
++fi
  if [ -e /initrd-user ]; then set ARCU=/initrd-user; fi
  
 -if [ -s /zImage-dsm -a -s /initrd-dsm ]; then
@@ -62,7 +64,7 @@ diff --git a/files/p1/boot/grub/grub.cfg b/files/p1/boot/grub/grub.cfg
    if [ "${default}" = "direct" ]; then
      set timeout="1"
      if [ -s ${prefix}/rsysenv ]; then
-@@ -95,7 +119,7 @@
+@@ -95,7 +121,7 @@
      fi
      menuentry 'Direct DSM Mode' --id direct {
        set gfxpayload="${linux_gfx_mode}"
@@ -71,7 +73,7 @@ diff --git a/files/p1/boot/grub/grub.cfg b/files/p1/boot/grub/grub.cfg
        echo ""
        echo -n "Boot Time: "; date
        echo ""
-@@ -108,65 +132,65 @@
+@@ -108,65 +134,65 @@
        echo "MEM:     ${sys_mem}"
        echo ""
        echo "Loading DSM Kernel..."

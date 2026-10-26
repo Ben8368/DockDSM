@@ -356,10 +356,10 @@ class QemuArgvProvider:
         if accelerator not in ACCELERATORS:
             raise ContractError("unsupported accelerator")
         if accelerator == "kvm" and (
-                host.kvm_access is not True or host.kvm_probe is not True
+                host.kvm_access is not True or host.kvm_probe is False
                 or host.container_arch != profile.guest_arch
                 or (host.host_arch is not None and host.host_arch != profile.guest_arch)):
-            raise ContractError("KVM requires device access, a successful QEMU probe, and compatible known architectures")
+            raise ContractError("KVM requires device access, no failed QEMU probe, and compatible known architectures")
         argv = tuple(qemu_argv)
         expected_binary = "qemu-system-x86_64" if profile.guest_arch == "amd64" else "qemu-system-aarch64"
         if expected_binary not in host.qemu_binaries:

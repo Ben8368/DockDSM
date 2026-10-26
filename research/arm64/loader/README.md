@@ -137,11 +137,11 @@ On 2026-10-25, the exact official DS124 7.2.2-72806 kernel and initrd reached
 shows the kernel segment at `0x42000000` (`0x18e0000` bytes), initrd at
 `0x438e0000` (`0xe9e000` bytes), and all four kexec segments above the loader
 LPI tables at `0x41060000`/`0x41070000`. The loader command line disables LPI
-only in the loader; DSM still initializes GICv3 ITS and allocates fresh tables
-at `0x40170000`, `0x40180000`, and `0x40190000`, without the corruption warning.
-The target reported
-`linux,dummy-virt`, GICv3, approximately 2 GiB RAM, booted CPU1, and allocated a
-`synobios` opened the patched `/dev/ttyS1` and identified Model DS-124.
+only in the loader; DSM still initializes GICv3 ITS. The target reported
+`linux,dummy-virt`, GICv3, approximately 2 GiB RAM, booted CPU1, and allocated
+fresh ITS tables at `0x40170000`, `0x40180000`, and `0x40190000` without the
+corruption warning. `synobios` opened the patched `/dev/ttyS1` and identified
+Model DS-124.
 `linuxrc.syno` stopped at
 `DISK NOT INSTALLED`, after which `/etc/rc` started. The runner returned 0
 after its expected 150-second QEMU timeout. This proves the bounded Loader→DSM
