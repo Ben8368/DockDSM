@@ -148,7 +148,7 @@ def _machine_spec(argv: tuple[str, ...]) -> str:
                     if not part.startswith("accel="))
 
 
-def _probe_kvm(qemu_path: str, machine: str, device: str = "/dev/kvm") -> tuple[bool, bool]:
+def _probe_kvm(qemu_path: str, machine: str, device: str = "/dev/kvm") -> tuple[bool, bool | None]:
     accessible = Path(device).exists() and os.access(device, os.R_OK | os.W_OK)
     if not accessible:
         return False, False
@@ -184,6 +184,10 @@ def build_legacy_launch_plan(environment: dict[str, str], qemu_arguments: list[s
         raise ContractError("CONTAINER_ARCH must be detected before planning QEMU")
 
     host_arch = environment.get("DOCKDSM_HOST_ARCH") or None
+    if host_arch in ("x86_64", "x86_64h"):
+        host_arch = "amd64"
+    elif host_arch == "aarch64":
+        host_arch = "arm64"
     kvm_access: bool | None = None
     kvm_probe: bool | None = None
     if accelerator == "kvm":

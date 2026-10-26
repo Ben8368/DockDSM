@@ -1,7 +1,7 @@
 # 当前状态
 
 > **最后确认：** 2026-10-25
-> **阶段：** Phase 1 Provider 已实现（旧平台仅合成回归）；开放 Linux x86 GRUB BIOS/UEFI TCG 与 ARM64 GICv2、GICv3 ITS-off/ITS-on handoff 通过；DS124 官方 kernel/initrd 在 GICv3 ITS-on、loader LPI 关闭、kexec 段下界 0x42000000 的 diskless TCG 实验到达 login。
+> **阶段：** Phase 1 Provider 已实现（旧平台仅合成回归）；Linux x86 GRUB TCG 与 ARM64 GIC handoff 通过；DS124 官方 kernel/initrd 的 diskless TCG kexec 实验到达 login。
 > **代码基线：** `codex/boot-provider-bootstrap` 基于 master `c2da0dc`。生产路径为 Virtual DSM x86/DS124 `rtd1619b` 实验。
 
 ## 当前决策
@@ -24,10 +24,11 @@
 
 - ARC 来源/许可范围未闭合；暂不整体导入或分发组合产物，见 [RISK-006](docs/RISK_REGISTER.md#risk-006p1arc-集成尚无运行与许可边界证据)。
 - 自有 x86/ARM64 研究引导链已构建并通过开放 Linux QEMU 测试，未接入生产；许可审查、DSM 生命周期和硬件验收仍未完成。
-- DS124 kexec 仅 loader LPI 关闭时无 corruption warning；开启会 taint。DSM 生命周期、KVM L3/设备未验收；见 [RISK-002/007](docs/RISK_REGISTER.md)。宿主 macOS arm64/zsh；Buildroot/QEMU 曾在 Colima ARM64 VM 验证。
+- DS124 kexec 仅 loader LPI 关闭时无 corruption warning；开启会 taint，见 [RISK-010](docs/RISK_REGISTER.md)。DSM 生命周期、KVM L3/设备未验收，见 [RISK-002/007](docs/RISK_REGISTER.md)。
 
 ## 最近验证
 
+- 2026-10-26：WSL2 amd64 镜像回归通过：架构、QEMU 失败分类、x86 命令及 DC ZVA 系统/watchpoint/migration。[证据](tests/qemu-dcz/README.md)；不等同于原生 Linux/KVM。
 - 2026-10-25：DS124 stock initrd 在 2 GiB snapshot scratch 到达 login；原盘未变，未验收安装/生命周期。[记录](research/arm64/loader/README.md)
 - 2026-10-25：ARM64 Linux/DS124 TCG kexec 到 login；DS124 LPI 开时 taint，设备/生命周期未验收。[记录](research/arm64/loader/README.md)
 - 2026-10-25：x86_64 ISO 两次构建哈希一致，SeaBIOS/OVMF TCG 启动并关机；DSM 未测。[记录](research/x86_64/grub-loader/README.md)
@@ -35,7 +36,7 @@
 - 2026-10-25：固定 ARC 的 ARM 型号筛选、ARM64 GRUB 构建目标/ESP、更新包模块和 DockDSM 运行时品牌 overlay 已扩展；未验 ARC ARM runtime、DSM ARM 或 kexec。[评估](research/arc/arm64-port-assessment.md)
 - 2026-10-25：假 QEMU 验证 argv/畸形输入、PID/信号/退出码及 KVM 失败拒绝；平台快照通过，未跑真实 QEMU/DSM。[Provider](tests/boot-provider-legacy.py)、[平台](tests/platform.sh)
 - 2026-10-25：ARC 准入故障注入通过；`vendor/arc` 未初始化时实库检查 fail closed，未准入组件。[测试](tests/bootloader-component-admission.py)、[门禁](scripts/check-bootloader-admission.py)
-- 既有依赖锁定与未验证边界见[依赖清单](docs/dependency-locks.md)；x86 安装保盘及健康检查见[回归记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
+- 依赖锁定与未验证边界见[清单](docs/dependency-locks.md)；x86 安装回归见[记录](docs/archive/reviews/2026-10-22-installer-recovery.md)。
 
 ## 按需入口
 

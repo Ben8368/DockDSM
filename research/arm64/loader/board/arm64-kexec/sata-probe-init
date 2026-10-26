@@ -15,14 +15,18 @@ done
 
 if [ ! -b /dev/sata1 ] || [ ! -r /sys/block/sata1/size ]; then
   echo DOCKDSM_DS124_SATA_PROBE_FAIL_NO_BLOCK_DEVICE
-  exit 1
+  sync
+  /bin/busybox poweroff -f
+  exec sh
 fi
 
 sectors=$(cat /sys/block/sata1/size)
 cat /proc/partitions
 if [ "$sectors" != 4194304 ]; then
   echo "DOCKDSM_DS124_SATA_PROBE_FAIL_SIZE sectors=$sectors"
-  exit 1
+  sync
+  /bin/busybox poweroff -f
+  exec sh
 fi
 
 echo "DOCKDSM_DS124_SATA_PROBE_PASS sectors=$sectors"
