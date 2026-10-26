@@ -70,17 +70,23 @@ platformConfigureCpu() {
   ARM_ACCEL='tcg,thread=multi'
   CPU_FLAGS='max,lpa2=off'
   if [[ "$CONTAINER_ARCH" == arm64 ]] && ! disabled "$ARM_KVM_REQUEST"; then
-    local fallback_reason=''
+    local fallback_reason='' probe_status=0
     if ! platformKvmNodeExists; then
       fallback_reason='/dev/kvm is missing'
     elif ! platformKvmDeviceAccessible; then
       fallback_reason='/dev/kvm is not accessible to the container user'
-    elif ! platformKvmProbe; then
-      fallback_reason='QEMU KVM initialization failed'
     else
-      ARM_ACCEL=kvm
-      CPU_FLAGS=host
-      KVM=Y
+      platformKvmProbe || probe_status=$?
+      if (( probe_status == 0 || probe_status == 124 )); then
+        ARM_ACCEL=kvm
+        CPU_FLAGS=host
+        KVM=Y
+        if (( probe_status == 124 )); then
+          warn 'KVM probe timed out; attempting the requested KVM launch.'
+        fi
+      else
+        fallback_reason='QEMU KVM initialization failed'
+      fi
     fi
     if [[ -n "$fallback_reason" ]]; then
       warn "KVM unavailable ($fallback_reason); ARM DSM is running under TCG and may be substantially slower."
