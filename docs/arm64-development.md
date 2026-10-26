@@ -683,7 +683,7 @@ Graduated contracts:
 | Research evidence | Production owner |
 |---|---|
 | ARM64 guest on virt/GICv3 | `src/platform/rtd1619b.sh` machine and CPU policy |
-| TCG `max,lpa2=off` | ARM acceleration policy; matching ARM KVM requires a successful probe |
+| TCG `max,lpa2=off` | ARM acceleration policy; matching ARM KVM uses a probe when available, while timeout remains inconclusive and the requested KVM launch decides |
 | Stock direct Image/initramfs `/init` boot | Persistent `/storage/DSM_DS124_72806.kernel` and `.initrd` |
 | MMIO 16550 plus ttyS0 | First production QEMU patch and `-serial null -serial stdio` |
 | sysbus AHCI / stock rtk_ahci / sata1 | First patch plus raw `if=ide,index=0` system backend |
