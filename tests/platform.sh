@@ -57,13 +57,26 @@ CONTAINER_ARCH=amd64 CPU_CORES=2 RAM_SIZE=2G APP='Virtual DSM' PROCESS=virtual-d
 QEMU_DIR=$tmp QEMU_PID=/run/shm/qemu.pid WEB_PORT=5000 DSM_HTTPS_PORT=5001
 KERNEL_IMAGE=/storage/DSM_DS124_72806.kernel INITRD_IMAGE=/storage/DSM_DS124_72806.initrd
 SYSTEM_IMAGE=/storage/DSM_DS124_72806.system.img
+timeout() {
+  [[ "$1" == 10 && "$2" == "$QEMU_BIN" ]] || return 99
+  cat >/dev/null
+  return 124
+}
+if platformKvmProbe; then exit 1; else [[ $? == 124 ]]; fi
+unset -f timeout
 platformConfigureCpu
 [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == tcg,thread=multi:max,lpa2=off:N ]]
 warnings=()
 warn() { warnings+=("$*"); }
 platformKvmNodeExists() { [[ "${mock_kvm_node:-yes}" == yes ]]; }
 platformKvmDeviceAccessible() { [[ "${mock_kvm_access:-yes}" == yes ]]; }
-platformKvmProbe() { [[ "${mock_kvm_probe:-yes}" == yes ]]; }
+platformKvmProbe() {
+  case "${mock_kvm_probe:-yes}" in
+    yes) return 0 ;;
+    timeout) return 124 ;;
+    *) return 1 ;;
+  esac
+}
 platformConfigureCpu
 [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == tcg,thread=multi:max,lpa2=off:N && ${#warnings[@]} == 0 ]]
 CONTAINER_ARCH=arm64
@@ -71,7 +84,7 @@ mock_kvm_node=yes mock_kvm_access=yes mock_kvm_probe=yes
 platformConfigureCpu
 [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == kvm:host:Y && ${#ARM_CPU_ARGS[@]} == 6 ]]
 [[ "${ARM_CPU_ARGS[*]}" == '-accel kvm -cpu host -smp 2' ]]
-for scenario in missing inaccessible init-failure; do
+for scenario in missing inaccessible init-failure probe-timeout; do
   warnings=()
   KVM=N
   mock_kvm_node=yes mock_kvm_access=yes mock_kvm_probe=yes
@@ -79,13 +92,21 @@ for scenario in missing inaccessible init-failure; do
     missing) mock_kvm_node=no; expected='/dev/kvm is missing' ;;
     inaccessible) mock_kvm_access=no; expected='/dev/kvm is not accessible' ;;
     init-failure) mock_kvm_probe=no; expected='QEMU KVM initialization failed' ;;
+    probe-timeout) mock_kvm_probe=timeout ;;
   esac
   platformConfigureCpu
+  if [[ "$scenario" == probe-timeout ]]; then
+    [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == kvm:host:Y ]]
+    [[ ${#warnings[@]} == 1 && "${warnings[0]}" == *'timed out'* && "${warnings[0]}" == *'attempting the requested KVM launch'* ]]
+    continue
+  fi
   [[ "$ARM_ACCEL:$CPU_FLAGS:$KVM" == tcg,thread=multi:max,lpa2=off:N ]]
   [[ ${#warnings[@]} == 1 && "${warnings[0]}" == *"$expected"* && "${warnings[0]}" == *'substantially slower'* ]]
 done
 unset mock_kvm_node mock_kvm_access mock_kvm_probe
+KVM=N
 CONTAINER_ARCH=amd64
+platformConfigureCpu
 platformPrepareSystemDisks
 platformConfigureNetwork
 QEMU_DIR=/run/shm
